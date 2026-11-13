@@ -307,6 +307,40 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin:22px 0}
  .pomo-subject-visuals{gap:16px}
  .pomo-subject-pie-wrap{padding-top:4px}
 }
+
+.hunter-overview-card{padding:22px 26px;margin-bottom:16px;background:radial-gradient(circle at 88% 20%,rgba(139,102,226,.18),transparent 35%),linear-gradient(120deg,#17172f,#111a2c);border:1px solid #51417f;overflow:hidden}
+.hunter-overview-main{display:flex;align-items:center;justify-content:space-between;gap:20px}
+.hunter-overview-copy{min-width:0}
+.hunter-overview-title{font-size:clamp(38px,6vw,62px);line-height:1;font-weight:950;letter-spacing:4px;color:#f0eaff;margin:10px 0 5px}
+.hunter-overview-title span{color:#a78bfa}
+.hunter-overview-quest{font-size:13px;color:var(--muted)}
+.hunter-overview-rank{display:flex;align-items:center;gap:12px;flex:0 0 auto}
+.hunter-overview-emblem{width:54px;height:54px;border:1px solid #a78bfa;border-radius:13px;display:grid;place-items:center;background:#342653;color:#f2eaff;font-size:27px;font-weight:900;box-shadow:0 0 22px #8b5cf633}
+.hunter-overview-rank strong,.hunter-overview-rank span{display:block}
+.hunter-overview-rank strong{font-size:12px;letter-spacing:.7px}
+.hunter-overview-rank span{font-size:11px;color:var(--muted);margin-top:5px}
+.hunter-overview-xp{margin-top:18px}
+.hunter-overview-xp-label{display:flex;justify-content:space-between;gap:12px;font-size:11px;margin-bottom:7px}
+.hunter-overview-xp-label strong{color:#e9ddff}
+.hunter-overview-xp-label span{color:var(--muted)}
+.hunter-overview-xp .xp-track{height:8px}
+.hunter-overview-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;font-size:11px;color:var(--muted)}
+.profile-tab-shortcut{color:#c7b5ff;text-decoration:none;font-weight:750}
+.profile-tab-shortcut:hover{text-decoration:underline}
+@media(max-width:600px){.hunter-overview-card{padding:17px}.hunter-overview-main{align-items:flex-start;flex-direction:column;gap:14px}.hunter-overview-title{font-size:42px}.hunter-overview-foot{align-items:flex-start;flex-direction:column}}
+
+.auth-shell[hidden]{display:none!important}
+.welcome-label{font-size:12px;font-weight:750;color:#d9caff;white-space:nowrap}
+.profile-avatar-btn{width:42px;height:42px;flex:0 0 42px;border-radius:50%;border:1px solid #9274df;background:linear-gradient(135deg,#46336e,#1b2540);color:#f5efff;font-size:15px;font-weight:900;display:grid;place-items:center;overflow:hidden;cursor:pointer;padding:0;box-shadow:0 0 16px rgba(139,92,246,.18)}
+.profile-avatar-btn img{width:100%;height:100%;object-fit:cover}
+.profile-avatar-btn[hidden]{display:none!important}
+.profile-picture-card{display:flex;align-items:center;gap:18px;margin-bottom:14px}
+.profile-picture-preview{width:82px;height:82px;flex:0 0 82px;border-radius:50%;display:grid;place-items:center;overflow:hidden;border:2px solid #9b7bea;background:linear-gradient(135deg,#46336e,#1b2540);color:#f5efff;font-size:30px;font-weight:900}
+.profile-picture-preview img{width:100%;height:100%;object-fit:cover}
+.profile-picture-controls{display:flex;align-items:flex-start;gap:7px;flex-direction:column}
+.profile-upload-label,.profile-remove-btn,.profile-signout-btn{border:1px solid #55447f;background:#211d39;color:#eee8ff;padding:8px 12px;border-radius:9px;font-weight:700;font-size:12px;cursor:pointer}
+.profile-remove-btn{background:transparent;color:var(--muted)}
+@media(max-width:520px){.welcome-label{font-size:10px;max-width:120px;white-space:normal;text-align:right}.profile-avatar-btn{width:38px;height:38px;flex-basis:38px}.profile-picture-card{align-items:flex-start}}
 </style>
 
 <style id="solo-inspired-theme">
@@ -1011,7 +1045,7 @@ body.pomodoro-fallback-active{overflow:hidden!important}
 <main>
   <div class="top">
     <div><h1>Daily Habit Tracker</h1><div class="sub">Small actions. Consistent days.</div></div>
-    <div class="top-actions"><div class="date" id="todayLabel"></div><button type="button" id="guildBellBtn" class="guild-bell" aria-label="Open friend network" title="Friends & invitations">🔔<span id="guildBellCount" hidden>0</span></button></div>
+    <div class="top-actions"><div class="date" id="todayLabel"></div><div class="welcome-label" id="welcomeLabel" hidden></div><button type="button" id="profileAvatarBtn" class="profile-avatar-btn" aria-label="Open Hunter Profile" title="Hunter Profile" hidden><span id="profileAvatarInitial">H</span><img id="profileAvatarImage" alt="Profile picture" hidden></button><button type="button" id="guildBellBtn" class="guild-bell" aria-label="Open friend network" title="Friends & invitations">🔔<span id="guildBellCount" hidden>0</span></button></div>
   </div>
 
 
@@ -1023,35 +1057,23 @@ body.pomodoro-fallback-active{overflow:hidden!important}
     <button type="button" class="page-tab" data-page="accountabilityPage">🤝 Accountability</button>
   </nav>
   <div id="dashboardPage">
-  <section class="system-hero">
-    <div class="hero-copy">
-      <div class="eyebrow"><span class="pulse"></span> SYSTEM ONLINE <span class="divider-dot">/</span> DAILY QUEST</div>
-      <div class="hero-title">ARISE<span>.</span></div>
-      <div class="hero-sub">Your daily quests are waiting, Hunter.</div>
-      <div class="rank-line"><span class="rank-badge">E-RANK</span><span id="questStatus">Complete every quest to clear today's mission.</span></div>
-    </div>
-    <div class="portal-art" aria-hidden="true">
-      <div class="portal-ring ring-one"></div><div class="portal-ring ring-two"></div>
-      <div class="portal-core"><svg viewBox="0 0 120 150" role="presentation"><path d="M60 10 48 48 24 66 42 78 32 130 60 108 88 130 78 78 96 66 72 48Z" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M60 28 55 62 42 72 55 82 49 112 60 98 71 112 65 82 78 72 65 62Z" fill="currentColor" opacity=".45"/><path d="M15 24 27 35M105 24 93 35M9 105 25 101M111 105 95 101" stroke="currentColor" stroke-width="2"/></svg></div>
-      <span class="rune rune-a">ᛉ</span><span class="rune rune-b">ᚷ</span><span class="rune rune-c">ᛟ</span>
-    </div>
-    <div class="hero-corner">PLAYER STATUS<br><strong>HUNTER</strong></div>
-  </section>
-
-  <section class="hunter-panel card">
-    <div class="hunter-head"><div><div class="panel-kicker">PLAYER PROFILE</div><h2>HUNTER STATUS</h2></div><div class="level-pill" id="levelBadge">LEVEL 01</div></div>
-    <div class="hunter-main">
-      <div class="hunter-emblem" id="rankEmblem">E</div>
-      <div class="hunter-info">
-        <div class="rank-name" id="rankName">E-RANK HUNTER</div>
-        <div class="xp-numbers"><strong id="xpCurrent">0 XP</strong><span id="xpNeeded">/ 500 XP</span></div>
-        <div class="xp-track"><div class="xp-fill" id="xpFill"></div></div>
-        <div class="xp-caption" id="xpCaption">500 XP to next level</div>
+  <section class="hunter-overview-card card">
+    <div class="hunter-overview-main">
+      <div class="hunter-overview-copy">
+        <div class="eyebrow"><span class="pulse"></span> SYSTEM ONLINE <span class="divider-dot">/</span> DAILY QUEST</div>
+        <div class="hunter-overview-title">ARISE<span>.</span></div>
+        <div class="hunter-overview-quest" id="questStatus">Complete every quest to clear today's mission.</div>
       </div>
-      <div class="total-xp"><strong id="totalXp">0</strong><span>TOTAL XP</span></div>
+      <div class="hunter-overview-rank">
+        <div class="hunter-overview-emblem" id="compactRank">E</div>
+        <div><strong id="compactRankName">E-RANK HUNTER</strong><span id="compactLevel">LEVEL 01</span></div>
+      </div>
     </div>
-    <div class="rank-progress" id="rankProgress">E-Rank · Your awakening begins here.</div>
-    <div class="achievement-row" id="achievements"></div>
+    <div class="hunter-overview-xp">
+      <div class="hunter-overview-xp-label"><strong><span id="compactXp">0</span> XP</strong><span id="compactXpNext">500 XP to next level</span></div>
+      <div class="xp-track"><div class="xp-fill" id="compactXpFill"></div></div>
+    </div>
+    <div class="hunter-overview-foot"><span id="compactQuestCount">0 / 0 quests complete</span><a href="#" class="profile-tab-shortcut" data-open-page="hunterProfilePage">Detailed Hunter profile ↗</a></div>
   </section>
   <section class="grid">
     <div class="card">
@@ -1087,19 +1109,38 @@ body.pomodoro-fallback-active{overflow:hidden!important}
       </div>
     </div>
   </section>
-  <div class="bottom">
-    <section class="card">
-      <div class="section-head"><h2>This week</h2><span class="tag">Last 7 days</span></div>
-      <div class="week" id="week"></div>
-      <div class="history-note">A day counts toward your streak when every active habit is completed.</div>
-    </section>
-    <section class="card">
-      <div class="section-head"><h2>Hunter's reminder</h2><span class="tag" id="habitCount">0 habits</span></div>
-      <div class="history-note">Build a small set of quests you can complete consistently. Visit Habit Management to add, rename, configure or remove habits.</div>
-    </section>
   </div>
-  <footer>Your data is saved locally in this browser on this computer. Export a backup regularly.</footer>
-  </div>
+  <section id="hunterProfilePage" hidden>
+    <div class="stats-title-row">
+      <div><div class="panel-kicker">PLAYER PROFILE</div><h2>HUNTER PROFILE</h2><p class="history-note">Detailed rank, level, XP progression and achievement milestones.</p></div>
+      <button type="button" id="profileSignOutBtn" class="profile-signout-btn">Log out</button>
+    </div>
+    <section class="card profile-picture-card">
+      <div class="profile-picture-preview" id="profilePicturePreview"><span id="profilePictureInitial">H</span><img id="profilePictureLarge" alt="Hunter profile picture" hidden></div>
+      <div class="profile-picture-controls">
+        <strong>Profile picture</strong>
+        <span class="history-note">Upload a picture to use as your account avatar.</span>
+        <label class="profile-upload-label" for="profilePictureInput">Choose image</label>
+        <input id="profilePictureInput" type="file" accept="image/*" hidden>
+        <button type="button" id="removeProfilePictureBtn" class="profile-remove-btn">Remove picture</button>
+      </div>
+    </section>
+  <section class="hunter-panel card">
+    <div class="hunter-head"><div><div class="panel-kicker">PLAYER PROFILE</div><h2>HUNTER STATUS</h2></div><div class="level-pill" id="levelBadge">LEVEL 01</div></div>
+    <div class="hunter-main">
+      <div class="hunter-emblem" id="rankEmblem">E</div>
+      <div class="hunter-info">
+        <div class="rank-name" id="rankName">E-RANK HUNTER</div>
+        <div class="xp-numbers"><strong id="xpCurrent">0 XP</strong><span id="xpNeeded">/ 500 XP</span></div>
+        <div class="xp-track"><div class="xp-fill" id="xpFill"></div></div>
+        <div class="xp-caption" id="xpCaption">500 XP to next level</div>
+      </div>
+      <div class="total-xp"><strong id="totalXp">0</strong><span>TOTAL XP</span></div>
+    </div>
+    <div class="rank-progress" id="rankProgress">E-Rank · Your awakening begins here.</div>
+    <div class="achievement-row" id="achievements"></div>
+  </section>
+  </section>
   <section id="statisticsPage" hidden>
     <div class="stats-title-row">
       <div><div class="panel-kicker">HUNTER ANALYTICS</div><h2>STATISTICS</h2><p class="history-note">A separate view of your consistency and progress.</p></div>
@@ -1336,28 +1377,6 @@ body.pomodoro-fallback-active{overflow:hidden!important}
         </form>
         <div id="guildChatFeedback" class="accountability-feedback" role="status" aria-live="polite">Messages are private to you and the selected friend.</div>
       </article>
-      <article class="card accountability-card">
-        <span class="accountability-status">BACKEND SETUP REQUIRED</span>
-        <h3>🔔 Reminders & nudges</h3>
-        <p>Send a friend a gentle reminder to start studying or return to their goal.</p>
-        <div class="accountability-placeholder">Friend reminders and in-app notifications will appear here.</div>
-      </article>
-      <article class="card accountability-card accountability-wide">
-        <span class="accountability-status">WEBRTC SETUP REQUIRED</span>
-        <h3>🖥 Screen sharing</h3>
-        <p>Share a browser tab, application window or your entire screen with people in your study room.</p>
-        <div class="accountability-placeholder">Screen sharing will only start after you explicitly select Share screen. You can stop sharing at any time. A signaling service and TURN relay may be needed for reliable connections across different networks.</div>
-      </article>
-      <article class="card accountability-card accountability-wide">
-        <h3>What needs to happen before this works</h3>
-        <p>This tab is the interface foundation, not a claim that the social features are already live.</p>
-        <ol class="accountability-feature-list">
-          <li>Run the supplied Supabase SQL setup to create the social tables and row-level security policies.</li>
-          <li>Connect friend invitations, room membership, chat and reminders to Supabase Realtime.</li>
-          <li>Configure WebRTC signaling and a TURN relay for dependable screen sharing across networks.</li>
-        </ol>
-        <div class="history-note">Your existing habits, XP, goals and Pomodoro data are not changed by this addition.</div>
-      </article>
     </div>
   </section>
 </main>
@@ -1405,13 +1424,35 @@ function setAuthStatus(message,kind=''){
  const el=document.getElementById('authStatus');if(!el)return;
  el.textContent=message;el.className='auth-state'+(kind?' '+kind:'');
 }
+function hunterDisplayName(user){
+ const meta=user?.user_metadata||{};
+ const candidate=meta.full_name||meta.name||meta.display_name||meta.username;
+ if(candidate&&String(candidate).trim())return String(candidate).trim();
+ const email=user?.email||'Hunter';
+ return email.split('@')[0].replace(/[._-]+/g,' ').replace(/\\b\\w/g,c=>c.toUpperCase())||'Hunter';
+}
+function renderProfilePicture(){
+ const picture=data.profilePicture||'';
+ const small=document.getElementById('profileAvatarImage');
+ const large=document.getElementById('profilePictureLarge');
+ const initials=document.getElementById('profileAvatarInitial');
+ const largeInitials=document.getElementById('profilePictureInitial');
+ const name=hunterDisplayName(cloudUser);
+ const initial=(name.trim()[0]||'H').toUpperCase();
+ if(initials)initials.textContent=initial;
+ if(largeInitials)largeInitials.textContent=initial;
+ if(small){small.hidden=!picture;if(picture)small.src=picture;}
+ if(large){large.hidden=!picture;if(picture)large.src=picture;}
+}
 function setSignedInUI(user){
  const signed=!!user;
- document.getElementById('authEmail').hidden=signed;
- document.getElementById('authPassword').hidden=signed;
- document.getElementById('signInBtn').hidden=signed;
- document.getElementById('signUpBtn').hidden=signed;
+ document.querySelector('.auth-shell').hidden=signed;
  document.getElementById('signOutBtn').hidden=!signed;
+ const welcome=document.getElementById('welcomeLabel');
+ const avatar=document.getElementById('profileAvatarBtn');
+ if(welcome){welcome.hidden=!signed;welcome.textContent=signed?((user.created_at&&Date.now()-new Date(user.created_at).getTime()<120000)?'Welcome, ':'Welcome back, ')+hunterDisplayName(user):'';}
+ if(avatar)avatar.hidden=!signed;
+ renderProfilePicture();
 }
 
 function setFriendsFeedback(message,kind=''){
@@ -2009,6 +2050,30 @@ document.getElementById('signUpBtn').addEventListener('click',async()=>{
  else if(result.session) await syncFromCloud(result.user);
  else setAuthStatus('Account created. Check your email to confirm, then return here and log in.','ok');
 });
+document.getElementById('profileAvatarBtn').addEventListener('click',()=>{
+ const tab=document.querySelector('.page-tab[data-page="dashboardPage"]');
+ document.getElementById('dashboardPage').hidden=true;
+ document.getElementById('hunterProfilePage').hidden=false;
+ document.querySelectorAll('.page-tab').forEach(x=>x.classList.remove('active'));
+});
+document.getElementById('profileSignOutBtn').addEventListener('click',()=>document.getElementById('signOutBtn').click());
+document.getElementById('profilePictureInput').addEventListener('change',async e=>{
+ const file=e.target.files&&e.target.files[0];if(!file)return;
+ if(!file.type.startsWith('image/')){showToast('Choose an image file.');e.target.value='';return;}
+ if(file.size>8*1024*1024){showToast('Image must be smaller than 8 MB.');e.target.value='';return;}
+ try{
+  const source=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(file);});
+  const image=await new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=reject;img.src=source;});
+  const canvas=document.createElement('canvas');const scale=Math.min(1,320/Math.max(image.width,image.height));
+  canvas.width=Math.max(1,Math.round(image.width*scale));canvas.height=Math.max(1,Math.round(image.height*scale));
+  canvas.getContext('2d').drawImage(image,0,0,canvas.width,canvas.height);
+  data.profilePicture=canvas.toDataURL('image/jpeg',0.82);save();renderProfilePicture();const avatarImg=document.getElementById('profileAvatarImage'),profileImg=document.getElementById('profilePictureLarge');avatarImg.src=data.profilePicture;avatarImg.hidden=false;profileImg.src=data.profilePicture;profileImg.hidden=false;showToast('Profile picture updated.');
+ }catch(err){console.error('Profile image upload failed:',err);showToast('Could not load that image.');}
+ e.target.value='';
+});
+document.getElementById('removeProfilePictureBtn').addEventListener('click',()=>{
+ data.profilePicture='';save();renderProfilePicture();showToast('Profile picture removed.');
+});
 document.getElementById('signOutBtn').addEventListener('click',async()=>{
  const {error}=await cloudClient.auth.signOut();if(error)setAuthStatus(error.message,'error');
 });
@@ -2080,7 +2145,7 @@ function playHunterSfx(type){
 function streakNow(){let n=0,cursor=dateObj(todayKey());if(pct(todayKey())!==100)cursor.setDate(cursor.getDate()-1);for(let i=0;i<366;i++){const k=cursor.toLocaleDateString('en-CA');if(pct(k)===100&&data.habits.length){n++;cursor.setDate(cursor.getDate()-1)}else break;}return n;}
 function levelInfo(){const level=Math.floor(data.xp/500)+1;const inLevel=data.xp%500;let rank='E',desc='Your awakening begins here.';if(level>=76){rank='S';desc='The Shadow Monarch stands above all hunters.'}else if(level>=51){rank='A';desc='An elite hunter. Your power is undeniable.'}else if(level>=36){rank='B';desc='A formidable hunter with proven discipline.'}else if(level>=21){rank='C';desc='Your strength is beginning to show.'}else if(level>=11){rank='D';desc='You have outgrown the beginner ranks.'}return {level,inLevel,rank,desc};}
 function awardXP(amount,reason,key){if(data.xpEvents[key])return false;const before=levelInfo().level;data.xpEvents[key]={amount,reason,at:new Date().toISOString()};data.xp+=amount;const after=levelInfo().level;save();showToast((after>before?'LEVEL UP! ':'+')+amount+' XP · '+reason,after>before);if(after>before)playHunterSfx('levelup');return true;}
-function renderHunter(){const v=levelInfo();document.getElementById('levelBadge').textContent='LEVEL '+String(v.level).padStart(2,'0');document.getElementById('rankEmblem').textContent=v.rank;document.getElementById('rankName').textContent=v.rank+'-RANK HUNTER';document.getElementById('xpCurrent').textContent=v.inLevel+' XP';document.getElementById('xpNeeded').textContent='/ 500 XP';document.getElementById('xpFill').style.width=(v.inLevel/500*100)+'%';document.getElementById('xpCaption').textContent=(500-v.inLevel)+' XP to next level';document.getElementById('totalXp').textContent=data.xp.toLocaleString();document.getElementById('rankProgress').textContent=v.rank+'-Rank · '+v.desc;const a=[['FIRST QUEST',data.xp>=10],['LEVEL 5',v.level>=5],['7-DAY STREAK',!!data.claimedMilestones['7']],['30-DAY STREAK',!!data.claimedMilestones['30']]];document.getElementById('achievements').innerHTML=a.map(([label,earned])=>'<span class="achievement '+(earned?'':'locked')+'">'+(earned?'✦ ':'◇ ')+label+'</span>').join('');}
+function renderHunter(){renderProfilePicture();const v=levelInfo();document.getElementById('compactRank').textContent=v.rank;document.getElementById('compactRankName').textContent=v.rank+'-RANK HUNTER';document.getElementById('compactLevel').textContent='LEVEL '+String(v.level).padStart(2,'0');document.getElementById('compactXp').textContent=data.xp.toLocaleString();document.getElementById('compactXpNext').textContent=(500-v.inLevel)+' XP to next level';document.getElementById('compactXpFill').style.width=(v.inLevel/500*100)+'%';document.getElementById('levelBadge').textContent='LEVEL '+String(v.level).padStart(2,'0');document.getElementById('rankEmblem').textContent=v.rank;document.getElementById('rankName').textContent=v.rank+'-RANK HUNTER';document.getElementById('xpCurrent').textContent=v.inLevel+' XP';document.getElementById('xpNeeded').textContent='/ 500 XP';document.getElementById('xpFill').style.width=(v.inLevel/500*100)+'%';document.getElementById('xpCaption').textContent=(500-v.inLevel)+' XP to next level';document.getElementById('totalXp').textContent=data.xp.toLocaleString();document.getElementById('rankProgress').textContent=v.rank+'-Rank · '+v.desc;const a=[['FIRST QUEST',data.xp>=10],['LEVEL 5',v.level>=5],['7-DAY STREAK',!!data.claimedMilestones['7']],['30-DAY STREAK',!!data.claimedMilestones['30']]];document.getElementById('achievements').innerHTML=a.map(([label,earned])=>'<span class="achievement '+(earned?'':'locked')+'">'+(earned?'✦ ':'◇ ')+label+'</span>').join('');}
 
 
 function habitEmoji(name){
@@ -2199,8 +2264,9 @@ function render(){
  document.getElementById('todayLabel').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',year:'numeric',month:'long',day:'numeric'});
  document.getElementById('percent').textContent=p;document.getElementById('progressBar').style.width=p+'%';
  document.getElementById('questStatus').textContent = total && p===100 ? "Daily quest cleared. You have earned today\'s victory." : `${done} / ${total} quests complete — keep moving forward.`;
+ document.getElementById('compactQuestCount').textContent=done+' / '+total+' quests complete';
  document.getElementById('doneCount').textContent=done;document.getElementById('totalCount').textContent=total;
- document.getElementById('habitCount').textContent=total+' habits';
+ 
  document.getElementById('managementHabitCount').textContent=total+' habits';
  const managementList=document.getElementById('managementHabitList');
  managementList.innerHTML='';
@@ -2286,8 +2352,8 @@ function render(){
 
  let streak=streakNow();
  document.getElementById('streak').textContent=streak+' '+(streak===1?'day':'days');
- const week=document.getElementById('week');week.innerHTML='';let best=-1,bestLabel='—';
- for(let i=6;i>=0;i--){let d=new Date();d.setDate(d.getDate()-i);let k=d.toLocaleDateString('en-CA'),v=pct(k),el=document.createElement('div');el.className='day'+(i===0?' today':'');el.innerHTML='<small>'+d.toLocaleDateString(undefined,{weekday:'short'})+'</small><strong>'+v+'%</strong>';week.append(el);if(v>best){best=v;bestLabel=v+'%'}}
+ let best=-1,bestLabel='—';
+ for(let i=6;i>=0;i--){let d=new Date();d.setDate(d.getDate()-i);let k=d.toLocaleDateString('en-CA'),v=pct(k);if(v>best){best=v;bestLabel=v+'%'}}
  document.getElementById('bestDay').textContent=bestLabel;
  document.getElementById('donutPercent').textContent=p+'%';
  document.getElementById('donutDone').textContent=done+' / '+total;
@@ -2743,12 +2809,99 @@ function updateGuildBellCount(studyCount=0){
 const guildBell=document.getElementById('guildBellBtn');
 if(guildBell)guildBell.addEventListener('click',()=>{const panel=document.getElementById('accountabilityFriendsCard');if(panel)panel.classList.toggle('guild-friends-open');});
 document.addEventListener('click',e=>{const panel=document.getElementById('accountabilityFriendsCard'),bell=document.getElementById('guildBellBtn');if(panel&&panel.classList.contains('guild-friends-open')&&!panel.contains(e.target)&&!bell?.contains(e.target))panel.classList.remove('guild-friends-open');});
-document.querySelectorAll('.page-tab').forEach(b=>b.addEventListener('click',()=>{const page=b.dataset.page;document.getElementById('dashboardPage').hidden=page!=='dashboardPage';document.getElementById('statisticsPage').hidden=page!=='statisticsPage';document.getElementById('managementPage').hidden=page!=='managementPage';document.getElementById('pomodoroPage').hidden=page!=='pomodoroPage';document.getElementById('accountabilityPage').hidden=page!=='accountabilityPage';document.querySelectorAll('.page-tab').forEach(x=>x.classList.toggle('active',x===b));if(page==='statisticsPage')renderStatistics();if(page==='pomodoroPage')renderPomodoroStats();}));
+document.querySelectorAll('.page-tab').forEach(b=>b.addEventListener('click',()=>{const page=b.dataset.page;
+document.getElementById('dashboardPage').hidden=page!=='dashboardPage';document.getElementById('hunterProfilePage').hidden=page!=='hunterProfilePage';document.getElementById('statisticsPage').hidden=page!=='statisticsPage';document.getElementById('managementPage').hidden=page!=='managementPage';document.getElementById('pomodoroPage').hidden=page!=='pomodoroPage';document.getElementById('accountabilityPage').hidden=page!=='accountabilityPage';document.querySelectorAll('.page-tab').forEach(x=>x.classList.toggle('active',x===b));if(page==='statisticsPage')renderStatistics();if(page==='pomodoroPage')renderPomodoroStats();}));
+document.querySelectorAll('[data-open-page]').forEach(el=>el.addEventListener('click',e=>{e.preventDefault();document.querySelector('.page-tab[data-page="'+el.dataset.openPage+'"]').click();}));
 document.querySelectorAll('.range-btn').forEach(b=>b.addEventListener('click',()=>{statsDays=Number(b.dataset.range);document.querySelectorAll('.range-btn').forEach(x=>x.classList.toggle('active',x===b));renderStatistics();}));
 
 // Start with an anonymous preview. Authenticated cloud data is loaded only
 // after Supabase confirms the signed-in user; never hydrate from shared localStorage.
 data=createFreshPlayerData();ensureProgress();render();renderPomodoroSubjects();renderPomodoroHistory();setPomodoroMode('focus');setSignedInUI(null);initCloud();
 </script>
+<style id="mobile-final-pass">
+/* Final mobile layout pass: navigation readability and overflow prevention */
+@media (max-width: 760px){
+  .page-nav{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    width:100%;
+    box-sizing:border-box;
+    gap:7px;
+    padding:6px;
+    margin-bottom:16px;
+  }
+  .page-tab{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:42px;
+    padding:9px 8px;
+    font-size:13px;
+    line-height:1.25;
+    font-weight:750;
+    white-space:normal;
+    overflow-wrap:anywhere;
+    text-align:center;
+  }
+  .page-tab:last-child{grid-column:1/-1}
+  .accountability-grid,.accountability-wide,.study-live-grid,
+  .pomo-subject-visuals,.stats-visual,.completion-visual-grid{
+    min-width:0;
+    max-width:100%;
+  }
+  .accountability-grid{grid-template-columns:minmax(0,1fr)}
+  .study-live-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .study-live-member,.accountability-card,.guild-chat-card{min-width:0;max-width:100%}
+  .guild-chat-messages{max-width:100%;overflow-y:auto;overflow-x:hidden}
+  .guild-chat-compose{display:flex;flex-wrap:wrap}
+  .guild-chat-compose input{flex:1 1 180px;min-width:0}
+  .pomodoro-stats-panel,.pomodoro-timer-card,.card,section{min-width:0;max-width:100%;box-sizing:border-box}
+  .pomodoro-timer-wrap{max-width:100%}
+  .pomodoro-controls,.pomodoro-subject-row,.pomodoro-mode-row{flex-wrap:wrap}
+  .pomodoro-controls button,.pomodoro-mode-row button{max-width:100%}
+  .pomo-subject-visuals{grid-template-columns:minmax(0,1fr)}
+  .pomo-subject-pie-wrap{justify-content:flex-start;flex-wrap:wrap}
+  .management-item{min-width:0}
+  .stats-event,.goal-card,.goal-card-head,.study-person{min-width:0;overflow-wrap:anywhere}
+  input,select,textarea{min-width:0;box-sizing:border-box}
+}
+@media (max-width: 520px){
+  .page-nav{gap:6px;padding:5px;border-radius:11px}
+  .page-tab{font-size:12.5px;min-height:44px;padding:10px 7px;letter-spacing:.05px}
+  .page-tab:last-child{grid-column:1/-1}
+  main{max-width:100%;box-sizing:border-box}
+  .top{min-width:0;flex-wrap:wrap}
+  .top-actions{max-width:100%;min-width:0}
+  .date{max-width:calc(100vw - 90px);overflow-wrap:anywhere}
+  .system-hero,.card,.stats-panel,.completion-visual{max-width:100%;box-sizing:border-box}
+  .study-live-grid{grid-template-columns:minmax(0,1fr)}
+  .study-live-member{padding:12px}
+  .study-arc-wrap{max-width:100%}
+  .study-live-settings{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .study-live-settings label{min-width:0}
+  .study-live-settings input{width:100%;min-width:0}
+  .study-live-actions{display:flex;flex-wrap:wrap;gap:7px}
+  .study-live-actions button{flex:1 1 120px;min-width:0}
+  .pomo-chart-row{grid-template-columns:minmax(65px,100px) minmax(0,1fr) 52px;gap:7px}
+  .pomo-subject-pie-wrap{gap:12px}
+  .pomo-subject-pie-legend{flex:1 1 130px}
+  .accountability-inline-form>*{min-width:0;width:100%}
+  .accountability-person-actions{display:flex;flex-wrap:wrap}
+  .accountability-person-actions button{flex:1 1 90px}
+  .goal-actions{display:flex;flex-wrap:wrap}
+  .goal-actions button{flex:1 1 90px}
+}
+@media (max-width: 380px){
+  .page-tab{font-size:12px;padding:9px 5px}
+  .page-tab:last-child{grid-column:1/-1}
+  main{padding-left:8px;padding-right:8px}
+  .card{padding:11px}
+  .section-head{gap:8px}
+  .section-head h2{font-size:15px}
+  .stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .study-live-settings{grid-template-columns:minmax(0,1fr)}
+  .pomo-chart-row{grid-template-columns:60px minmax(0,1fr) 48px;font-size:11px}
+}
+</style>
 </body>
 </html>
