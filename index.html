@@ -221,6 +221,15 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin:22px 0}
 
 @media(max-width:650px){.accountability-grid{grid-template-columns:1fr}.accountability-wide{grid-column:auto}}
 
+
+/* Study Together quick invite */
+.study-person{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px;border:1px solid var(--line);border-radius:10px;margin:8px 0;background:#10182a}
+.study-person small{display:block;color:var(--muted)}.study-actions,.study-settings{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.study-settings label{display:grid;gap:4px;color:var(--muted);font-size:12px;flex:1;min-width:110px}
+.study-settings input,.study-settings select{width:100%;min-width:0;background:#0e1728;border:1px solid var(--line);border-radius:8px;padding:9px;color:var(--text)}
+.study-status{font-size:12px;color:#b8c6e2}.study-countdown{font-size:25px;font-weight:800;letter-spacing:1px;margin:8px 0;color:#d6caff}
+.study-session-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:9px;margin-top:10px}
+.study-member{padding:12px;border:1px solid var(--line);border-radius:10px;background:#10182a}.study-member strong{display:block}.study-member small{color:var(--muted)}
 </style>
 
 <style id="solo-inspired-theme">
@@ -1214,12 +1223,13 @@ body.pomodoro-fallback-active{overflow:hidden!important}
         <div class="accountability-subsection"><h4>Incoming requests</h4><div id="incomingFriendRequests" class="accountability-list"><div class="accountability-placeholder">No requests loaded.</div></div></div>
         <div class="accountability-subsection"><h4>Your friends</h4><div id="acceptedFriendsList" class="accountability-list"><div class="accountability-placeholder">Your accepted friends will appear here.</div></div></div>
       </article>
-      <article class="card accountability-card">
-        <span class="accountability-status">BACKEND SETUP REQUIRED</span>
+      <article class="card accountability-card" id="studyTogetherCard">
+        <span class="accountability-status" id="studyTogetherStatus">QUICK INVITE</span>
         <h3>📚 Study Together</h3>
-        <p>Create a private room or join a friend's room for a shared focus session.</p>
-        <div class="accountability-placeholder">No study rooms yet. Room creation and live participant status will activate after setup.</div>
-        <ul class="accountability-feature-list"><li>Private room codes</li><li>Pomodoro-based group sessions</li><li>See who's focusing or on break</li></ul>
+        <p>Invite an accepted friend. You each choose your own subject and timer settings.</p>
+        <div class="accountability-subsection"><h4>Incoming study invites</h4><div id="studyIncomingInvites" class="accountability-list"><div class="accountability-placeholder">No pending invites.</div></div></div>
+        <div class="accountability-subsection"><h4>Your study session</h4><div id="studySessionHost" class="accountability-placeholder">Choose Study with a friend to send a quick invite.</div></div>
+        <div class="accountability-feedback" id="studyFeedback" role="status" aria-live="polite">Each hunter controls their own subject, focus duration and break duration.</div>
       </article>
       <article class="card accountability-card accountability-wide" id="guildChatCard">
         <span class="accountability-status" id="guildChatStatus">SIGN IN TO CHAT</span>
@@ -1337,7 +1347,7 @@ function renderAcceptedFriends(rows){
  const select=document.getElementById('chatFriendSelect');
  const previous=select?select.value:'';
  if(!rows.length){host.innerHTML='<div class="accountability-empty">No friends yet. Share your invite code to get started.</div>';}
- else host.innerHTML=rows.map(r=>'<div class="accountability-person"><div class="accountability-person-main"><strong>'+escapeHtml(r.display_name||'Hunter')+'</strong><small>Friend since '+new Date(r.created_at).toLocaleDateString()+'</small></div><button type="button" data-chat-friend="'+escapeHtml(r.user_id)+'">Message</button></div>').join('');
+ else host.innerHTML=rows.map(r=>'<div class="accountability-person"><div class="accountability-person-main"><strong>'+escapeHtml(r.display_name||'Hunter')+'</strong><small>Friend since '+new Date(r.created_at).toLocaleDateString()+'</small></div><div class="accountability-person-actions"><button type="button" data-chat-friend="'+escapeHtml(r.user_id)+'">Message</button><button type="button" data-study-friend="'+escapeHtml(r.user_id)+'">Study</button></div></div>').join('');
  if(select){
   select.innerHTML='<option value="">Select an accepted friend</option>'+rows.map(r=>'<option value="'+escapeHtml(r.user_id)+'">'+escapeHtml(r.display_name||'Hunter')+'</option>').join('');
   if(rows.some(r=>r.user_id===previous))select.value=previous;
@@ -1524,6 +1534,108 @@ function subscribeGuildChat(){
   }).subscribe();
 }
 
+
+// One-to-one Study Together: a shared session with independent per-user timers.
+let studyRealtimeChannel=null, studyCurrentInvite=null, studyTickHandle=null, studyTimerTransitioning=false;
+function studyFeedback(message,kind=''){
+ const el=document.getElementById('studyFeedback');if(el){el.textContent=message;el.className='accountability-feedback'+(kind?' '+kind:'');}
+}
+function studyEscape(v){return escapeHtml(String(v??''));}
+async function inviteStudyFriend(friendId){
+ if(!cloudUser||!cloudReady){studyFeedback('Sign in first.','error');return;}
+ const uid=cloudUser.id;
+ const {data:existing,error:findError}=await cloudClient.from('study_together_invites').select('id,status').or('and(inviter_id.eq.'+uid+',invitee_id.eq.'+friendId+'),and(inviter_id.eq.'+friendId+',invitee_id.eq.'+uid+')').in('status',['pending','accepted']).order('created_at',{ascending:false}).limit(1);
+ if(findError){studyFeedback('Could not check existing sessions: '+findError.message,'error');return;}
+ if(existing?.length){studyCurrentInvite=existing[0].id;await loadStudyTogether();studyFeedback('There is already a pending or active study session with this friend.','ok');return;}
+ const {data:row,error}=await cloudClient.from('study_together_invites').insert({inviter_id:uid,invitee_id:friendId,status:'pending'}).select('id').single();
+ if(error){studyFeedback('Invite failed: '+error.message,'error');return;}
+ studyCurrentInvite=row.id;
+ studyFeedback('Study invite sent. Your friend must accept before the session opens.','ok');
+ await loadStudyTogether();
+}
+async function respondStudyInvite(id,decision){
+ if(!cloudUser||!cloudReady)return;
+ const {data:invite,error:readError}=await cloudClient.from('study_together_invites').select('id,inviter_id,invitee_id').eq('id',id).eq('invitee_id',cloudUser.id).single();
+ if(readError||!invite){studyFeedback('Could not load that invitation.','error');return;}
+ const {error}=await cloudClient.from('study_together_invites').update({status:decision==='accept'?'accepted':'declined',responded_at:new Date().toISOString()}).eq('id',id).eq('invitee_id',cloudUser.id).eq('status','pending');
+ if(error){studyFeedback('Could not '+decision+' invite: '+error.message,'error');return;}
+ if(decision==='accept'){
+  const {error:presenceError}=await cloudClient.from('study_together_presence').upsert({session_id:id,user_id:cloudUser.id,subject:'',focus_minutes:25,break_minutes:5,status:'ready',phase_started_at:null,phase_ends_at:null,updated_at:new Date().toISOString()},{onConflict:'session_id,user_id'});
+  if(presenceError){studyFeedback('Invite accepted, but your timer profile failed: '+presenceError.message,'error');return;}
+ }
+ studyCurrentInvite=id;studyFeedback(decision==='accept'?'Invite accepted. Set your own subject and timer below.':'Invite declined.','ok');await loadStudyTogether();
+}
+function renderStudyIncoming(rows,names){
+ const host=document.getElementById('studyIncomingInvites');if(!host)return;
+ if(!rows.length){host.innerHTML='<div class="accountability-empty">No pending invites.</div>';return;}
+ host.innerHTML=rows.map(r=>'<div class="study-person"><div><strong>'+studyEscape(names.get(r.inviter_id)||'Hunter')+'</strong><small>Invited you to study together</small></div><div class="study-actions"><button type="button" data-study-response="accept" data-study-id="'+studyEscape(r.id)+'">Accept</button><button type="button" data-study-response="decline" data-study-id="'+studyEscape(r.id)+'">Decline</button></div></div>').join('');
+}
+async function loadStudyTogether(){
+ if(!cloudClient||!cloudUser||!cloudReady)return;
+ const uid=cloudUser.id;
+ const {data:invites,error}=await cloudClient.from('study_together_invites').select('id,inviter_id,invitee_id,status,created_at').or('inviter_id.eq.'+uid+',invitee_id.eq.'+uid).in('status',['pending','accepted']).order('created_at',{ascending:false}).limit(30);
+ if(!cloudUser||cloudUser.id!==uid)return;
+ if(error){studyFeedback('Study Together database setup is missing or failed: '+error.message,'error');return;}
+ const pending=(invites||[]).filter(x=>x.invitee_id===uid&&x.status==='pending');
+ const profileIds=[...new Set((invites||[]).map(x=>x.inviter_id===uid?x.invitee_id:x.inviter_id))];
+ let names=new Map();if(profileIds.length){const {data:p}=await cloudClient.from('hunter_profiles').select('user_id,display_name').in('user_id',profileIds);names=new Map((p||[]).map(x=>[x.user_id,x.display_name||'Hunter']));}
+ renderStudyIncoming(pending,names);
+ const active=(invites||[]).find(x=>x.status==='accepted');
+ if(!active){document.getElementById('studySessionHost').innerHTML='No active session. Invite a friend from the Friends list.';studyCurrentInvite=null;return;}
+ studyCurrentInvite=active.id;
+ const {data:members,error:memberError}=await cloudClient.from('study_together_presence').select('user_id,subject,focus_minutes,break_minutes,status,phase_started_at,phase_ends_at,updated_at').eq('session_id',active.id);
+ if(memberError){studyFeedback('Could not load session participants: '+memberError.message,'error');return;}
+ const {data:allProfiles}=await cloudClient.from('hunter_profiles').select('user_id,display_name').in('user_id',[active.inviter_id,active.invitee_id]);
+ const display=new Map((allProfiles||[]).map(x=>[x.user_id,x.display_name||'Hunter']));
+ let mine=(members||[]).find(x=>x.user_id===uid);
+ if(!mine){
+  const {data:created,error:createError}=await cloudClient.from('study_together_presence').insert({session_id:active.id,user_id:uid,subject:'',focus_minutes:25,break_minutes:5,status:'ready'}).select('user_id,subject,focus_minutes,break_minutes,status,phase_started_at,phase_ends_at,updated_at').single();
+  if(createError){studyFeedback('Your personal timer profile could not be created: '+createError.message,'error');return;}
+  mine=created;
+ }
+
+ const host=document.getElementById('studySessionHost');
+ host.innerHTML='<div class="study-settings"><label>Your subject<input id="studyMySubject" maxlength="80" placeholder="e.g. Linux" value="'+studyEscape(mine.subject)+'"></label><label>Focus minutes<input id="studyMyFocus" type="number" min="1" max="180" value="'+Number(mine.focus_minutes||25)+'"></label><label>Break minutes<input id="studyMyBreak" type="number" min="1" max="60" value="'+Number(mine.break_minutes||5)+'"></label></div><div class="study-actions"><button type="button" id="studySavePrefs">Save my settings</button><button type="button" class="primary" id="studyStartFocus">Start focus</button><button type="button" id="studyStartBreak">Start break</button><button type="button" id="studyFinish">Finish</button></div><div class="study-countdown" id="studyCountdown">'+studyCountdown(mine.phase_ends_at,mine.status)+'</div><div class="study-session-grid">'+(members||[]).map(m=>'<div class="study-member"><strong>'+studyEscape(display.get(m.user_id)||'Hunter')+(m.user_id===uid?' (You)':'')+'</strong><span class="study-status">'+studyEscape(studyStatusLabel(m.status))+'</span><small>Subject: '+studyEscape(m.subject||'Not set')+' · '+Number(m.focus_minutes||25)+'m focus / '+Number(m.break_minutes||5)+'m break</small></div>').join('')+'</div>';
+ document.getElementById('studySavePrefs').onclick=()=>saveStudyPrefs(active.id);
+ document.getElementById('studyStartFocus').onclick=()=>setStudyPhase(active.id,'focus');
+ document.getElementById('studyStartBreak').onclick=()=>setStudyPhase(active.id,'break');
+ document.getElementById('studyFinish').onclick=()=>setStudyPhase(active.id,'finished');
+ if(studyTickHandle)clearInterval(studyTickHandle);
+ studyTimerTransitioning=false;
+ studyTickHandle=setInterval(()=>{
+  const el=document.getElementById('studyCountdown');if(el)el.textContent=studyCountdown(mine.phase_ends_at,mine.status);
+  if((mine.status==='focus'||mine.status==='break')&&mine.phase_ends_at&&Date.now()>=new Date(mine.phase_ends_at).getTime()&&!studyTimerTransitioning){
+   studyTimerTransitioning=true;
+   if(studyTickHandle){clearInterval(studyTickHandle);studyTickHandle=null;}
+   setStudyPhase(active.id,mine.status==='focus'?'break':'finished').finally(()=>{studyTimerTransitioning=false;});
+  }
+ },1000);
+}
+function studyStatusLabel(s){return ({waiting:'Waiting for friend',ready:'Ready',focus:'Focusing',break:'On break',finished:'Finished',offline:'Offline'})[s]||s||'Ready';}
+function studyCountdown(end,status){if(status!=='focus'&&status!=='break')return studyStatusLabel(status);const sec=Math.max(0,Math.ceil((new Date(end).getTime()-Date.now())/1000));return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');}
+async function saveStudyPrefs(sessionId){
+ const subject=document.getElementById('studyMySubject').value.trim(),focus=Number(document.getElementById('studyMyFocus').value),brk=Number(document.getElementById('studyMyBreak').value);
+ if(!subject){studyFeedback('Enter your subject.','error');return;}if(!Number.isInteger(focus)||focus<1||focus>180||!Number.isInteger(brk)||brk<1||brk>60){studyFeedback('Focus must be 1–180 minutes and break 1–60 minutes.','error');return;}
+ const {error}=await cloudClient.from('study_together_presence').update({subject,focus_minutes:focus,break_minutes:brk,updated_at:new Date().toISOString()}).eq('session_id',sessionId).eq('user_id',cloudUser.id);
+ if(error){studyFeedback('Settings were not saved: '+error.message,'error');return;}studyFeedback('Your settings are saved. Your friend has separate settings.','ok');await loadStudyTogether();
+}
+async function setStudyPhase(sessionId,phase){
+ const {data:mine,error:readError}=await cloudClient.from('study_together_presence').select('focus_minutes,break_minutes').eq('session_id',sessionId).eq('user_id',cloudUser.id).single();
+ if(readError||!mine){studyFeedback('Could not load your timer settings.','error');return;}
+ const now=new Date(),mins=phase==='focus'?mine.focus_minutes:mine.break_minutes;
+ const patch={status:phase,phase_started_at:phase==='finished'?null:now.toISOString(),phase_ends_at:phase==='finished'?null:new Date(now.getTime()+mins*60000).toISOString(),updated_at:now.toISOString()};
+ const {error}=await cloudClient.from('study_together_presence').update(patch).eq('session_id',sessionId).eq('user_id',cloudUser.id);
+ if(error){studyFeedback('Timer update failed: '+error.message,'error');return;}studyFeedback(phase==='finished'?'You finished this study session.':'Your '+phase+' timer started.','ok');await loadStudyTogether();
+}
+function subscribeStudyTogether(){
+ if(!cloudClient||!cloudUser)return;if(studyRealtimeChannel)cloudClient.removeChannel(studyRealtimeChannel);
+ const uid=cloudUser.id;
+ studyRealtimeChannel=cloudClient.channel('study-together-'+uid)
+  .on('postgres_changes',{event:'*',schema:'public',table:'study_together_invites'},p=>{const x=p.new||p.old||{};if(cloudUser?.id===uid&&(x.inviter_id===uid||x.invitee_id===uid))loadStudyTogether();})
+  .on('postgres_changes',{event:'*',schema:'public',table:'study_together_presence'},p=>{const x=p.new||p.old||{};if(cloudUser?.id===uid&&x.session_id===studyCurrentInvite)loadStudyTogether();})
+  .subscribe();
+}
+
 function initAccountabilityUI(){
  initGuildChatUI();
  const send=document.getElementById('sendFriendRequestBtn');
@@ -1542,6 +1654,10 @@ function initAccountabilityUI(){
   const btn=e.target.closest('button[data-friend-action]');if(!btn)return;
   respondToFriendRequest(btn.dataset.requestId,btn.dataset.friendAction);
  });}
+ const friends=document.getElementById('acceptedFriendsList');
+ if(friends&&!friends.dataset.studyBound){friends.dataset.studyBound='1';friends.addEventListener('click',e=>{const btn=e.target.closest('button[data-study-friend]');if(btn)inviteStudyFriend(btn.dataset.studyFriend);});}
+ const studyIncoming=document.getElementById('studyIncomingInvites');
+ if(studyIncoming&&!studyIncoming.dataset.bound){studyIncoming.dataset.bound='1';studyIncoming.addEventListener('click',e=>{const btn=e.target.closest('button[data-study-response]');if(btn)respondStudyInvite(btn.dataset.studyId,btn.dataset.studyResponse);});}
 }
 
 async function refreshFromCloud(){
@@ -1596,6 +1712,9 @@ async function syncFromCloud(user){
  await loadAccountabilityFriends();
  initGuildChatUI();
  subscribeGuildChat();
+ initAccountabilityUI();
+ subscribeStudyTogether();
+ await loadStudyTogether();
  if(accountabilityChannel){await cloudClient.removeChannel(accountabilityChannel);accountabilityChannel=null;}
  accountabilityChannel=cloudClient.channel('accountability-'+user.id)
   .on('postgres_changes',{event:'*',schema:'public',table:'friend_requests',filter:'addressee_id=eq.'+user.id},()=>{if(cloudUser&&cloudUser.id===user.id&&cloudReady)loadAccountabilityFriends();})
@@ -1626,6 +1745,9 @@ async function initCloud(){
    if(cloudChannel){cloudClient.removeChannel(cloudChannel);cloudChannel=null;}
    if(accountabilityChannel){cloudClient.removeChannel(accountabilityChannel);accountabilityChannel=null;}
    if(guildChatChannel){cloudClient.removeChannel(guildChatChannel);guildChatChannel=null;}
+   if(studyRealtimeChannel){cloudClient.removeChannel(studyRealtimeChannel);studyRealtimeChannel=null;}
+   if(studyTickHandle){clearInterval(studyTickHandle);studyTickHandle=null;}
+   studyCurrentInvite=null;
    // Never leave the previous account's profile visible after logout.
    data=createFreshPlayerData();ensureProgress();render();
    renderPomodoroSubjects();renderPomodoroHistory();
