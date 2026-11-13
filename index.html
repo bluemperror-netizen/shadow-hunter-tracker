@@ -230,6 +230,9 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin:22px 0}
 .study-status{font-size:12px;color:#b8c6e2}.study-countdown{font-size:25px;font-weight:800;letter-spacing:1px;margin:8px 0;color:#d6caff}
 .study-session-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:9px;margin-top:10px}
 .study-member{padding:12px;border:1px solid var(--line);border-radius:10px;background:#10182a}.study-member strong{display:block}.study-member small{color:var(--muted)}
+
+.study-together-live{margin:18px 0}.study-live-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px}.study-live-member{border:1px solid var(--line);border-radius:14px;padding:16px;background:rgba(12,18,34,.72);min-width:0}.study-live-member h3{margin:0 0 6px}.study-live-member .study-live-clock{font-size:clamp(30px,5vw,48px);font-weight:800;letter-spacing:1px;margin:12px 0}.study-live-meta{display:flex;flex-wrap:wrap;gap:8px;color:var(--muted);font-size:12px}.study-live-settings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}.study-live-settings label{display:grid;gap:5px;font-size:12px;color:var(--muted)}.study-live-settings input{width:100%;min-width:0}.study-live-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.study-live-actions button{flex:1}.study-live-status{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#9e8bff;font-weight:800}.study-together-live:fullscreen,.study-together-live.study-live-fullscreen{background:#080d19;color:#fff;overflow:auto;padding:24px;box-sizing:border-box}.study-together-live:fullscreen .study-live-grid,.study-together-live.study-live-fullscreen .study-live-grid{min-height:65vh;align-items:stretch}.study-together-live:fullscreen .study-live-member,.study-together-live.study-live-fullscreen .study-live-member{display:flex;flex-direction:column;justify-content:center;text-align:center}.study-together-live:fullscreen .study-live-clock,.study-together-live.study-live-fullscreen .study-live-clock{font-size:clamp(52px,10vw,110px)}@media(max-width:650px){.study-live-grid{grid-template-columns:1fr}.study-live-settings{grid-template-columns:1fr 1fr}}
+
 </style>
 
 <style id="solo-inspired-theme">
@@ -1173,6 +1176,10 @@ body.pomodoro-fallback-active{overflow:hidden!important}
       </div>
       <div class="pomodoro-session-count"><strong id="pomodoroSessions">0</strong><span>completed focus sessions</span></div>
     </section>
+    <section class="card study-together-live" id="studyTogetherLivePanel">
+      <div class="section-head"><div><span class="tag">GUILD LINK</span><h2>Study Together · Live</h2><p class="history-note">Your Pomodoro subject list is shared with this view. Each hunter keeps independent timings.</p></div><button type="button" id="studyTogetherFullscreen" class="pomodoro-fullscreen" aria-label="Fullscreen side-by-side study view" title="Fullscreen side-by-side">⛶</button></div>
+      <div id="studyTogetherLiveContent"><div class="accountability-empty">Accept a Quick Invite from Accountability to see your friend's live session here.</div></div>
+    </section>
     <section class="card pomodoro-history-card">
       <div class="section-head"><h2>Recent study sessions</h2><span class="tag">Your history</span></div>
       <div id="pomodoroHistory" class="pomodoro-history"><div class="stats-empty">No study sessions yet.</div></div>
@@ -1535,13 +1542,12 @@ function subscribeGuildChat(){
 }
 
 
-// One-to-one Study Together: a shared session with independent per-user timers.
-let studyRealtimeChannel=null, studyCurrentInvite=null, studyTickHandle=null, studyTimerTransitioning=false;
-function studyFeedback(message,kind=''){
- const el=document.getElementById('studyFeedback');if(el){el.textContent=message;el.className='accountability-feedback'+(kind?' '+kind:'');}
-}
+// One-to-one Study Together: synchronized first start, independent timers thereafter.
+let studyRealtimeChannel=null, studyCurrentInvite=null, studyTickHandle=null, studyTimerTransitioning=false, studyCurrentMembers=[], studyCurrentProfiles=new Map(), studyCurrentInviteRow=null;
+function studyFeedback(message,kind=''){const el=document.getElementById('studyFeedback');if(el){el.textContent=message;el.className='accountability-feedback'+(kind?' '+kind:'');}}
 function studyEscape(v){return escapeHtml(String(v??''));}
-async function inviteStudyFriend(friendId){
+function inviteStudyFriend(friendId){return createStudyInvite(friendId);}
+async function createStudyInvite(friendId){
  if(!cloudUser||!cloudReady){studyFeedback('Sign in first.','error');return;}
  const uid=cloudUser.id;
  const {data:existing,error:findError}=await cloudClient.from('study_together_invites').select('id,status').or('and(inviter_id.eq.'+uid+',invitee_id.eq.'+friendId+'),and(inviter_id.eq.'+friendId+',invitee_id.eq.'+uid+')').in('status',['pending','accepted']).order('created_at',{ascending:false}).limit(1);
@@ -1549,9 +1555,7 @@ async function inviteStudyFriend(friendId){
  if(existing?.length){studyCurrentInvite=existing[0].id;await loadStudyTogether();studyFeedback('There is already a pending or active study session with this friend.','ok');return;}
  const {data:row,error}=await cloudClient.from('study_together_invites').insert({inviter_id:uid,invitee_id:friendId,status:'pending'}).select('id').single();
  if(error){studyFeedback('Invite failed: '+error.message,'error');return;}
- studyCurrentInvite=row.id;
- studyFeedback('Study invite sent. Your friend must accept before the session opens.','ok');
- await loadStudyTogether();
+ studyCurrentInvite=row.id;studyFeedback('Study invite sent. Your friend must accept before the session opens.','ok');await loadStudyTogether();
 }
 async function respondStudyInvite(id,decision){
  if(!cloudUser||!cloudReady)return;
@@ -1563,7 +1567,7 @@ async function respondStudyInvite(id,decision){
   const {error:presenceError}=await cloudClient.from('study_together_presence').upsert({session_id:id,user_id:cloudUser.id,subject:'',focus_minutes:25,break_minutes:5,status:'ready',phase_started_at:null,phase_ends_at:null,updated_at:new Date().toISOString()},{onConflict:'session_id,user_id'});
   if(presenceError){studyFeedback('Invite accepted, but your timer profile failed: '+presenceError.message,'error');return;}
  }
- studyCurrentInvite=id;studyFeedback(decision==='accept'?'Invite accepted. Set your own subject and timer below.':'Invite declined.','ok');await loadStudyTogether();
+ studyCurrentInvite=id;studyFeedback(decision==='accept'?'Invite accepted. Open Pomodoro, choose your subject and timings, then save your settings.':'Invite declined.','ok');await loadStudyTogether();
 }
 function renderStudyIncoming(rows,names){
  const host=document.getElementById('studyIncomingInvites');if(!host)return;
@@ -1573,7 +1577,7 @@ function renderStudyIncoming(rows,names){
 async function loadStudyTogether(){
  if(!cloudClient||!cloudUser||!cloudReady)return;
  const uid=cloudUser.id;
- const {data:invites,error}=await cloudClient.from('study_together_invites').select('id,inviter_id,invitee_id,status,created_at').or('inviter_id.eq.'+uid+',invitee_id.eq.'+uid).in('status',['pending','accepted']).order('created_at',{ascending:false}).limit(30);
+ const {data:invites,error}=await cloudClient.from('study_together_invites').select('id,inviter_id,invitee_id,status,created_at,session_started_at').or('inviter_id.eq.'+uid+',invitee_id.eq.'+uid).in('status',['pending','accepted']).order('created_at',{ascending:false}).limit(30);
  if(!cloudUser||cloudUser.id!==uid)return;
  if(error){studyFeedback('Study Together database setup is missing or failed: '+error.message,'error');return;}
  const pending=(invites||[]).filter(x=>x.invitee_id===uid&&x.status==='pending');
@@ -1581,51 +1585,88 @@ async function loadStudyTogether(){
  let names=new Map();if(profileIds.length){const {data:p}=await cloudClient.from('hunter_profiles').select('user_id,display_name').in('user_id',profileIds);names=new Map((p||[]).map(x=>[x.user_id,x.display_name||'Hunter']));}
  renderStudyIncoming(pending,names);
  const active=(invites||[]).find(x=>x.status==='accepted');
- if(!active){document.getElementById('studySessionHost').innerHTML='No active session. Invite a friend from the Friends list.';studyCurrentInvite=null;return;}
- studyCurrentInvite=active.id;
+ if(!active){studyCurrentInvite=null;studyCurrentInviteRow=null;studyCurrentMembers=[];renderStudyLivePanel();const host=document.getElementById('studySessionHost');if(host)host.textContent='No active session. Invite a friend from the Friends list.';return;}
+ studyCurrentInvite=active.id;studyCurrentInviteRow=active;
  const {data:members,error:memberError}=await cloudClient.from('study_together_presence').select('user_id,subject,focus_minutes,break_minutes,status,phase_started_at,phase_ends_at,updated_at').eq('session_id',active.id);
  if(memberError){studyFeedback('Could not load session participants: '+memberError.message,'error');return;}
- const {data:allProfiles}=await cloudClient.from('hunter_profiles').select('user_id,display_name').in('user_id',[active.inviter_id,active.invitee_id]);
- const display=new Map((allProfiles||[]).map(x=>[x.user_id,x.display_name||'Hunter']));
  let mine=(members||[]).find(x=>x.user_id===uid);
- if(!mine){
-  const {data:created,error:createError}=await cloudClient.from('study_together_presence').insert({session_id:active.id,user_id:uid,subject:'',focus_minutes:25,break_minutes:5,status:'ready'}).select('user_id,subject,focus_minutes,break_minutes,status,phase_started_at,phase_ends_at,updated_at').single();
-  if(createError){studyFeedback('Your personal timer profile could not be created: '+createError.message,'error');return;}
-  mine=created;
- }
-
- const host=document.getElementById('studySessionHost');
- host.innerHTML='<div class="study-settings"><label>Your subject<input id="studyMySubject" maxlength="80" placeholder="e.g. Linux" value="'+studyEscape(mine.subject)+'"></label><label>Focus minutes<input id="studyMyFocus" type="number" min="1" max="180" value="'+Number(mine.focus_minutes||25)+'"></label><label>Break minutes<input id="studyMyBreak" type="number" min="1" max="60" value="'+Number(mine.break_minutes||5)+'"></label></div><div class="study-actions"><button type="button" id="studySavePrefs">Save my settings</button><button type="button" class="primary" id="studyStartFocus">Start focus</button><button type="button" id="studyStartBreak">Start break</button><button type="button" id="studyFinish">Finish</button></div><div class="study-countdown" id="studyCountdown">'+studyCountdown(mine.phase_ends_at,mine.status)+'</div><div class="study-session-grid">'+(members||[]).map(m=>'<div class="study-member"><strong>'+studyEscape(display.get(m.user_id)||'Hunter')+(m.user_id===uid?' (You)':'')+'</strong><span class="study-status">'+studyEscape(studyStatusLabel(m.status))+'</span><small>Subject: '+studyEscape(m.subject||'Not set')+' · '+Number(m.focus_minutes||25)+'m focus / '+Number(m.break_minutes||5)+'m break</small></div>').join('')+'</div>';
- document.getElementById('studySavePrefs').onclick=()=>saveStudyPrefs(active.id);
- document.getElementById('studyStartFocus').onclick=()=>setStudyPhase(active.id,'focus');
- document.getElementById('studyStartBreak').onclick=()=>setStudyPhase(active.id,'break');
- document.getElementById('studyFinish').onclick=()=>setStudyPhase(active.id,'finished');
+ if(!mine){const {data:created,error:createError}=await cloudClient.from('study_together_presence').insert({session_id:active.id,user_id:uid,subject:'',focus_minutes:25,break_minutes:5,status:'ready'}).select('user_id,subject,focus_minutes,break_minutes,status,phase_started_at,phase_ends_at,updated_at').single();if(createError){studyFeedback('Your personal timer profile could not be created: '+createError.message,'error');return;}mine=created;members.push(created);}
+ const {data:profiles}=await cloudClient.from('hunter_profiles').select('user_id,display_name').in('user_id',[active.inviter_id,active.invitee_id]);
+ studyCurrentProfiles=new Map((profiles||[]).map(x=>[x.user_id,x.display_name||'Hunter']));studyCurrentMembers=members||[];
+ renderStudyLivePanel();
  if(studyTickHandle)clearInterval(studyTickHandle);
- studyTimerTransitioning=false;
  studyTickHandle=setInterval(()=>{
-  const el=document.getElementById('studyCountdown');if(el)el.textContent=studyCountdown(mine.phase_ends_at,mine.status);
-  if((mine.status==='focus'||mine.status==='break')&&mine.phase_ends_at&&Date.now()>=new Date(mine.phase_ends_at).getTime()&&!studyTimerTransitioning){
+  updateStudyLiveClocks();
+  const me=studyCurrentMembers.find(x=>x.user_id===cloudUser?.id);
+  if(me&&(me.status==='focus'||me.status==='break')&&me.phase_ends_at&&Date.now()>=new Date(me.phase_ends_at).getTime()&&!studyTimerTransitioning){
    studyTimerTransitioning=true;
+   const next=me.status==='focus'?'break':'ready';
    if(studyTickHandle){clearInterval(studyTickHandle);studyTickHandle=null;}
-   setStudyPhase(active.id,mine.status==='focus'?'break':'finished').finally(()=>{studyTimerTransitioning=false;});
+   setStudyPhase(active.id,next).finally(()=>{studyTimerTransitioning=false;});
   }
  },1000);
 }
 function studyStatusLabel(s){return ({waiting:'Waiting for friend',ready:'Ready',focus:'Focusing',break:'On break',finished:'Finished',offline:'Offline'})[s]||s||'Ready';}
-function studyCountdown(end,status){if(status!=='focus'&&status!=='break')return studyStatusLabel(status);const sec=Math.max(0,Math.ceil((new Date(end).getTime()-Date.now())/1000));return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');}
+function studyCountdown(end,status){if(status!=='focus'&&status!=='break')return studyStatusLabel(status);const sec=Math.max(0,Math.ceil((new Date(end).getTime()-Date.now())/1000));return formatPomodoroTime(sec);}
+function renderStudyLivePanel(){
+ const host=document.getElementById('studyTogetherLiveContent');if(!host)return;
+ if(!studyCurrentInviteRow){host.innerHTML='<div class="accountability-empty">Accept a Quick Invite from Accountability to see your friend here. Your Pomodoro subjects and study history stay in this section.</div>';return;}
+ const uid=cloudUser?.id,me=studyCurrentMembers.find(x=>x.user_id===uid),friend=studyCurrentMembers.find(x=>x.user_id!==uid);
+ const mySubject=document.getElementById('pomodoroSubject')?.value||me?.subject||'';
+ const bothReady=studyCurrentMembers.length===2&&studyCurrentMembers.every(x=>x.status==='ready'&&x.subject);
+ const started=!!studyCurrentInviteRow.session_started_at;
+ const memberCard=(m,isMe)=>{
+  if(!m)return '<article class="study-live-member"><div class="study-live-status">WAITING</div><h3>Friend</h3><div class="study-live-clock">--:--</div><p>Waiting for friend to join this session.</p></article>';
+  const name=isMe?'You':(studyCurrentProfiles.get(m.user_id)||'Friend');
+  const settings=isMe?'<div class="study-live-settings"><label>Focus minutes<input id="studyMyFocus" type="number" min="1" max="180" value="'+Number(m.focus_minutes||25)+'" '+(started?'disabled':'')+'></label><label>Break minutes<input id="studyMyBreak" type="number" min="1" max="60" value="'+Number(m.break_minutes||5)+'" '+(started?'disabled':'')+'></label></div><div class="study-live-actions">'+(started?'':'<button type="button" id="studySavePrefs">Save my settings</button>')+(started?'<button type="button" id="studyStartMyFocus" class="primary">Start my focus</button><button type="button" id="studyStartMyBreak">Start my break</button><button type="button" id="studyFinish">Finish</button>':'')+'</div>':'';
+  return '<article class="study-live-member"><div class="study-live-status">'+studyEscape(studyStatusLabel(m.status))+'</div><h3>'+studyEscape(name)+'</h3><div class="study-live-clock" data-study-clock="'+studyEscape(m.user_id)+'">'+studyCountdown(m.phase_ends_at,m.status)+'</div><div class="study-live-meta"><span>Subject: '+studyEscape(m.subject||'Not selected')+'</span><span>Focus: '+Number(m.focus_minutes||25)+' min</span><span>Break: '+Number(m.break_minutes||5)+' min</span></div>'+settings+'</article>';
+ };
+ host.innerHTML='<div class="study-live-grid">'+memberCard(me,true)+memberCard(friend,false)+'</div><div class="study-live-actions">'+(!started?'<button type="button" id="studyStartTogether" class="primary" '+(bothReady?'':'disabled')+'>Start together</button>':'<span class="tag">Shared start · '+new Date(studyCurrentInviteRow.session_started_at).toLocaleTimeString()+'</span>')+'</div><p class="history-note">Choose your subject in the Pomodoro subject selector above. Your friend chooses theirs on their own account. Save settings before the shared start.</p>';
+  const saveBtn=document.getElementById('studySavePrefs');if(saveBtn)saveBtn.onclick=()=>saveStudyPrefs(studyCurrentInvite);
+  const startTogether=document.getElementById('studyStartTogether');if(startTogether)startTogether.onclick=()=>startStudyTogether(studyCurrentInvite);
+  const startFocus=document.getElementById('studyStartMyFocus');if(startFocus)startFocus.onclick=()=>setStudyPhase(studyCurrentInvite,'focus');
+  const startBreak=document.getElementById('studyStartMyBreak');if(startBreak)startBreak.onclick=()=>setStudyPhase(studyCurrentInvite,'break');
+  const finish=document.getElementById('studyFinish');if(finish)finish.onclick=()=>setStudyPhase(studyCurrentInvite,'finished');
+  updateStudyLiveClocks();
+}
+function updateStudyLiveClocks(){document.querySelectorAll('[data-study-clock]').forEach(el=>{const m=studyCurrentMembers.find(x=>x.user_id===el.dataset.studyClock);if(m)el.textContent=studyCountdown(m.phase_ends_at,m.status);});}
 async function saveStudyPrefs(sessionId){
- const subject=document.getElementById('studyMySubject').value.trim(),focus=Number(document.getElementById('studyMyFocus').value),brk=Number(document.getElementById('studyMyBreak').value);
- if(!subject){studyFeedback('Enter your subject.','error');return;}if(!Number.isInteger(focus)||focus<1||focus>180||!Number.isInteger(brk)||brk<1||brk>60){studyFeedback('Focus must be 1–180 minutes and break 1–60 minutes.','error');return;}
- const {error}=await cloudClient.from('study_together_presence').update({subject,focus_minutes:focus,break_minutes:brk,updated_at:new Date().toISOString()}).eq('session_id',sessionId).eq('user_id',cloudUser.id);
- if(error){studyFeedback('Settings were not saved: '+error.message,'error');return;}studyFeedback('Your settings are saved. Your friend has separate settings.','ok');await loadStudyTogether();
+ const subject=document.getElementById('pomodoroSubject')?.value.trim(),focus=Number(document.getElementById('studyMyFocus')?.value),brk=Number(document.getElementById('studyMyBreak')?.value);
+ if(!subject){studyFeedback('Choose a subject from the Pomodoro subject selector first.','error');document.getElementById('pomodoroSubject')?.focus();return;}
+ if(!Number.isInteger(focus)||focus<1||focus>180||!Number.isInteger(brk)||brk<1||brk>60){studyFeedback('Focus must be 1–180 minutes and break 1–60 minutes.','error');return;}
+ const {error}=await cloudClient.from('study_together_presence').update({subject,focus_minutes:focus,break_minutes:brk,status:'ready',updated_at:new Date().toISOString()}).eq('session_id',sessionId).eq('user_id',cloudUser.id);
+ if(error){studyFeedback('Settings were not saved: '+error.message,'error');return;}studyFeedback('Your subject and timings are saved. Your friend has separate settings.','ok');await loadStudyTogether();
+}
+async function startStudyTogether(sessionId){
+ const {error}=await cloudClient.rpc('start_study_together',{p_session_id:sessionId});
+ if(error){studyFeedback('Could not start together: '+error.message,'error');return;}
+ studyFeedback('Shared start confirmed. Both focus timers use the same start timestamp.','ok');await loadStudyTogether();
+}
+async function recordStudyTogetherFocus(sessionId,mine,endedAt){
+ if(!mine?.phase_started_at||!mine.subject)return;
+ const startMs=new Date(mine.phase_started_at).getTime(),endMs=new Date(endedAt).getTime(),seconds=Math.max(0,Math.floor((endMs-startMs)/1000));
+ if(seconds<1)return;
+ const id='guild:'+sessionId+':'+cloudUser.id+':'+mine.phase_started_at;
+ data.studySessions=Array.isArray(data.studySessions)?data.studySessions:[];
+ if(data.studySessions.some(x=>x.id===id))return;
+ const {data:logged,error:logError}=await cloudClient.from('study_together_focus_logs').upsert({session_id:sessionId,user_id:cloudUser.id,subject:mine.subject,started_at:mine.phase_started_at,ended_at:new Date(endedAt).toISOString(),seconds},{onConflict:'session_id,user_id,started_at',ignoreDuplicates:true}).select('id');
+ if(logError){studyFeedback('Focus time could not be recorded in the shared study log: '+logError.message,'error');return;}
+ if(!logged||!logged.length)return;
+ const item={id,subject:mine.subject,completedAt:new Date(endedAt).toISOString(),minutes:Math.round(seconds/60*10)/10,seconds,source:'study-together'};
+ data.studySessions.push(item);
+ const linkedHabit=syncPomodoroToStudyHabit(mine.subject,seconds);
+ save();renderPomodoroHistory();renderPomodoroStats();
+ studyFeedback('Saved '+formatStudyDuration(seconds)+' for '+mine.subject+(linkedHabit?' · '+linkedHabit+' habit updated.':'. Add a measurable Study habit in minutes or hours to sync habit progress.'),'ok');
 }
 async function setStudyPhase(sessionId,phase){
- const {data:mine,error:readError}=await cloudClient.from('study_together_presence').select('focus_minutes,break_minutes').eq('session_id',sessionId).eq('user_id',cloudUser.id).single();
+ const {data:mine,error:readError}=await cloudClient.from('study_together_presence').select('subject,status,phase_started_at,phase_ends_at').eq('session_id',sessionId).eq('user_id',cloudUser.id).single();
  if(readError||!mine){studyFeedback('Could not load your timer settings.','error');return;}
- const now=new Date(),mins=phase==='focus'?mine.focus_minutes:mine.break_minutes;
- const patch={status:phase,phase_started_at:phase==='finished'?null:now.toISOString(),phase_ends_at:phase==='finished'?null:new Date(now.getTime()+mins*60000).toISOString(),updated_at:now.toISOString()};
+ const now=new Date();
+ if(mine.status==='focus'&&(phase==='break'||phase==='ready'||phase==='finished'))await recordStudyTogetherFocus(sessionId,mine,now.toISOString());
+ const mins=phase==='focus'?Number(studyCurrentMembers.find(x=>x.user_id===cloudUser.id)?.focus_minutes||25):Number(studyCurrentMembers.find(x=>x.user_id===cloudUser.id)?.break_minutes||5);
+ const patch={status:phase,phase_started_at:(phase==='focus'||phase==='break')?now.toISOString():null,phase_ends_at:(phase==='focus'||phase==='break')?new Date(now.getTime()+mins*60000).toISOString():null,updated_at:now.toISOString()};
  const {error}=await cloudClient.from('study_together_presence').update(patch).eq('session_id',sessionId).eq('user_id',cloudUser.id);
- if(error){studyFeedback('Timer update failed: '+error.message,'error');return;}studyFeedback(phase==='finished'?'You finished this study session.':'Your '+phase+' timer started.','ok');await loadStudyTogether();
+ if(error){studyFeedback('Timer update failed: '+error.message,'error');return;}studyFeedback(phase==='finished'?'You finished your study session.':'Your '+phase+' timer started.','ok');await loadStudyTogether();
 }
 function subscribeStudyTogether(){
  if(!cloudClient||!cloudUser)return;if(studyRealtimeChannel)cloudClient.removeChannel(studyRealtimeChannel);
@@ -1635,6 +1676,14 @@ function subscribeStudyTogether(){
   .on('postgres_changes',{event:'*',schema:'public',table:'study_together_presence'},p=>{const x=p.new||p.old||{};if(cloudUser?.id===uid&&x.session_id===studyCurrentInvite)loadStudyTogether();})
   .subscribe();
 }
+async function toggleStudyTogetherFullscreen(){
+ const el=document.getElementById('studyTogetherLivePanel');if(!el)return;
+ if(document.fullscreenElement===el){await document.exitFullscreen();return;}
+ if(el.classList.contains('study-live-fullscreen')){el.classList.remove('study-live-fullscreen');return;}
+ try{if(el.requestFullscreen)await el.requestFullscreen();else el.classList.add('study-live-fullscreen');}catch(e){el.classList.add('study-live-fullscreen');}
+}
+const studyTogetherFullscreenBtn=document.getElementById('studyTogetherFullscreen');if(studyTogetherFullscreenBtn)studyTogetherFullscreenBtn.addEventListener('click',toggleStudyTogetherFullscreen);
+document.addEventListener('fullscreenchange',()=>{const el=document.getElementById('studyTogetherLivePanel');if(el&&!document.fullscreenElement)el.classList.remove('study-live-fullscreen');});
 
 function initAccountabilityUI(){
  initGuildChatUI();
@@ -2435,7 +2484,7 @@ function updatePomodoroFullscreenSubject(){
  const selected=select&&select.selectedOptions&&select.selectedOptions[0];
  title.textContent=selected&&select.value?selected.textContent:'No subject selected';
 }
-document.getElementById('pomodoroSubject').addEventListener('change',updatePomodoroFullscreenSubject);
+document.getElementById('pomodoroSubject').addEventListener('change',()=>{updatePomodoroFullscreenSubject();renderStudyLivePanel();});
 async function togglePomodoroFullscreen(){
  updatePomodoroFullscreenSubject();
  const card=document.getElementById('pomodoroTimerCard');
