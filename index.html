@@ -272,6 +272,9 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin:22px 0}
 /* Keep Finish Early visible in the user's side-by-side study card */
 #studyTogetherLivePanel .study-live-actions .danger{background:rgba(127,29,29,.24);border:1px solid rgba(248,113,113,.55);color:#fecaca;font-weight:750}
 #studyTogetherLivePanel .study-live-actions .danger:disabled{opacity:.38;cursor:not-allowed}
+
+/* Always show Finish Early on the local active timer, including during breaks */
+#studyTogetherLivePanel .study-live-actions #studyFinishEarly{display:inline-flex;align-items:center;justify-content:center;min-height:40px;background:rgba(127,29,29,.25);border:1px solid rgba(248,113,113,.6);color:#fecaca;font-weight:800}
 </style>
 
 <style id="solo-inspired-theme">
@@ -1680,7 +1683,8 @@ function renderStudyLivePanel(){
  const memberCard=(m,isMe)=>{
   if(!m)return '<article class="study-live-member"><div class="study-live-status">WAITING</div><h3>Friend</h3><div class="study-live-clock">--:--</div><p>Waiting for friend to join this session.</p></article>';
   const name=isMe?'You':(studyCurrentProfiles.get(m.user_id)||'Friend');
-  const settings=isMe?'<div class="study-live-settings"><label>Focus minutes<input id="studyMyFocus" type="number" min="1" max="180" value="'+Number(m.focus_minutes||25)+'" '+(started?'disabled':'')+'></label><label>Break minutes<input id="studyMyBreak" type="number" min="1" max="60" value="'+Number(m.break_minutes||5)+'" '+(started?'disabled':'')+'></label></div><div class="study-live-actions">'+(started?'':'<button type="button" id="studySavePrefs">Save my settings</button>')+(started?'<button type="button" id="studyStartMyFocus" class="primary">Start my focus</button><button type="button" id="studyStartMyBreak">Start my break</button><button type="button" id="studyFinishEarly" class="danger" '+(m.status==='focus'?'':'disabled title="Start your focus timer before finishing early"')+'>Finish Early</button>':'')+'</div>':'';
+  const activeTimer=m.status==='focus'||m.status==='break';
+  const settings=isMe?'<div class="study-live-settings"><label>Focus minutes<input id="studyMyFocus" type="number" min="1" max="180" value="'+Number(m.focus_minutes||25)+'" '+(activeTimer?'disabled':'')+'></label><label>Break minutes<input id="studyMyBreak" type="number" min="1" max="60" value="'+Number(m.break_minutes||5)+'" '+(activeTimer?'disabled':'')+'></label></div><div class="study-live-actions">'+(activeTimer?'': '<button type="button" id="studySavePrefs">Save my settings</button>')+(activeTimer?(m.status==='focus'?'<button type="button" id="studyStartMyBreak">Start my break</button>':'<button type="button" id="studyStartMyFocus" class="primary">Start my focus</button>')+'<button type="button" id="studyFinishEarly" class="danger">Finish Early</button>':'')+'</div>':'';
 
   const totalSeconds=Math.max(1,(Number(m.status==='break'?m.break_minutes:m.focus_minutes)||25)*60);
   const remainingSeconds=(m.status==='focus'||m.status==='break')?Math.max(0,Math.ceil((new Date(m.phase_ends_at).getTime()-Date.now())/1000)):0;
@@ -1695,7 +1699,7 @@ function renderStudyLivePanel(){
   const startFocus=document.getElementById('studyStartMyFocus');if(startFocus)startFocus.onclick=()=>setStudyPhase(studyCurrentInvite,'focus');
   const startBreak=document.getElementById('studyStartMyBreak');if(startBreak)startBreak.onclick=()=>setStudyPhase(studyCurrentInvite,'break');
   const finish=document.getElementById('studyFinish');if(finish)finish.onclick=()=>setStudyPhase(studyCurrentInvite,'finished');
-  const finishEarly=document.getElementById('studyFinishEarly');if(finishEarly){finishEarly.disabled=studyCurrentMembers.find(x=>x.user_id===cloudUser?.id)?.status!=='focus';finishEarly.onclick=()=>setStudyPhase(studyCurrentInvite,'finished');}
+  const finishEarly=document.getElementById('studyFinishEarly');if(finishEarly)finishEarly.onclick=()=>setStudyPhase(studyCurrentInvite,'finished');
   updateStudyLiveClocks();
 }
 function updateStudyLiveClocks(){
