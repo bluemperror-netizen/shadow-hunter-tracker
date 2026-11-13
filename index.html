@@ -1348,7 +1348,7 @@ function load(){
  try{data=JSON.parse(localStorage.getItem(KEY))}catch(e){}
  if(!data||!Array.isArray(data.habits)) data=createFreshPlayerData();
 }
-function ensureProgress(){data.days=data.days||{};data.xp=Number.isFinite(data.xp)?data.xp:0;data.xpEvents=data.xpEvents||{};data.claimedDaily=data.claimedDaily||{};data.claimedMilestones=data.claimedMilestones||{};data.habitProgress=data.habitProgress||{};data.goals=Array.isArray(data.goals)?data.goals:[];}
+function ensureProgress(){data.days=data.days||{};data.xp=Number.isFinite(data.xp)?data.xp:0;data.xpEvents=data.xpEvents||{};data.claimedDaily=data.claimedDaily||{};data.claimedMilestones=data.claimedMilestones||{};data.habitProgress=data.habitProgress||{};data.goals=Array.isArray(data.goals)?data.goals:[];data.studySubjects=Array.isArray(data.studySubjects)?data.studySubjects:[];data.studySessions=Array.isArray(data.studySessions)?data.studySessions:[];}
 let cloudClient=null, cloudUser=null, cloudWriteTimer=null, cloudReady=false, cloudChannel=null, authSyncToken=0, accountabilityChannel=null;
 function save(){
  localStorage.setItem(KEY,JSON.stringify(data));
@@ -1898,6 +1898,8 @@ async function syncFromCloud(user){
  }
  if(syncToken!==authSyncToken||!cloudUser||cloudUser.id!==user.id)return;
  cloudReady=true;
+ renderPomodoroSubjects();
+ renderPomodoroHistory();
  initAccountabilityUI();
  await loadAccountabilityFriends();
  initGuildChatUI();
@@ -1916,7 +1918,7 @@ async function syncFromCloud(user){
   .on('postgres_changes',{event:'UPDATE',schema:'public',table:'player_saves',filter:'user_id=eq.'+user.id},payload=>{
    if(syncToken!==authSyncToken||!cloudUser||cloudUser.id!==user.id||!cloudReady)return;
    if(payload.new&&payload.new.player_data){
-    data=payload.new.player_data;ensureProgress();localStorage.setItem(KEY,JSON.stringify(data));render();
+    data=payload.new.player_data;ensureProgress();localStorage.setItem(KEY,JSON.stringify(data));render();renderPomodoroSubjects();renderPomodoroHistory();
     setAuthStatus('Cloud changes received · profile updated','ok');
    }
   }).subscribe();
@@ -2557,7 +2559,10 @@ function addPomodoroSubject(){
  renderPomodoroSubjects();
  document.getElementById('pomodoroSubject').value=subject;
  input.value='';
+ updatePomodoroFullscreenSubject();
  document.getElementById('pomodoroStatus').textContent='Subject added and selected. Ready to focus.';
+ renderStudyLivePanel();
+ publishPomodoroMirror();
 }
 document.getElementById('addStudySubjectBtn').addEventListener('click',addPomodoroSubject);
 document.getElementById('newStudySubject').addEventListener('keydown',e=>{
