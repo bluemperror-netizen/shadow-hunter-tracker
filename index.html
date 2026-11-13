@@ -291,6 +291,22 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin:22px 0}
 .pomo-pie-legend-row strong{color:var(--text);font-variant-numeric:tabular-nums}
 @media(max-width:760px){.pomo-subject-visuals{grid-template-columns:1fr}.pomo-subject-pie-wrap{justify-content:flex-start;flex-wrap:wrap}.pomo-subject-pie{width:150px;height:150px;flex-basis:150px}}
 @media(max-width:440px){.pomo-chart-row{grid-template-columns:minmax(65px,95px) minmax(0,1fr) 55px;gap:7px}.pomo-subject-pie{width:130px;height:130px;flex-basis:130px}}
+
+/* Focus-time-by-subject spacing refinement */
+.pomodoro-stats-panel:has(#pomoSubjectChart){padding:16px 18px 18px;min-height:0;height:auto}
+.pomodoro-stats-panel:has(#pomoSubjectChart) .section-head{margin-bottom:12px}
+.pomo-subject-visuals{grid-template-columns:minmax(0,1.25fr) minmax(210px,.75fr);gap:20px;align-items:center}
+.pomo-chart{gap:9px;align-content:start}
+.pomo-chart-row{min-height:22px;gap:10px}
+.pomo-chart-track{height:12px}
+.pomo-subject-pie-wrap{gap:14px;align-self:center}
+.pomo-subject-pie{width:148px;height:148px;flex-basis:148px}
+.pomo-subject-pie-legend{gap:6px;max-height:148px}
+@media(max-width:760px){
+ .pomodoro-stats-panel:has(#pomoSubjectChart){padding:14px}
+ .pomo-subject-visuals{gap:16px}
+ .pomo-subject-pie-wrap{padding-top:4px}
+}
 </style>
 
 <style id="solo-inspired-theme">
