@@ -280,6 +280,17 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin:22px 0}
 #studyTogetherLivePanel .study-live-member{min-height:330px}
 #studyTogetherLivePanel .study-live-meta{justify-content:center}
 @media(max-width:650px){#studyTogetherLivePanel .study-live-grid{grid-template-columns:1fr}}
+
+.pomo-subject-visuals{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(220px,.85fr);gap:26px;align-items:center}
+.pomo-subject-pie-wrap{display:flex;align-items:center;justify-content:center;gap:18px;min-width:0}
+.pomo-subject-pie{width:176px;height:176px;flex:0 0 176px;border-radius:50%;background:conic-gradient(#293149 0deg 360deg);box-shadow:0 0 0 1px rgba(255,255,255,.08),0 8px 26px rgba(0,0,0,.18)}
+.pomo-subject-pie-legend{display:grid;gap:8px;min-width:0;max-height:180px;overflow:auto}
+.pomo-pie-legend-row{display:grid;grid-template-columns:10px minmax(55px,1fr) auto;gap:7px;align-items:center;font-size:11px;color:var(--muted)}
+.pomo-pie-swatch{width:9px;height:9px;border-radius:3px}
+.pomo-pie-legend-name{overflow-wrap:anywhere;color:#e5e0f6}
+.pomo-pie-legend-row strong{color:var(--text);font-variant-numeric:tabular-nums}
+@media(max-width:760px){.pomo-subject-visuals{grid-template-columns:1fr}.pomo-subject-pie-wrap{justify-content:flex-start;flex-wrap:wrap}.pomo-subject-pie{width:150px;height:150px;flex-basis:150px}}
+@media(max-width:440px){.pomo-chart-row{grid-template-columns:minmax(65px,95px) minmax(0,1fr) 55px;gap:7px}.pomo-subject-pie{width:130px;height:130px;flex-basis:130px}}
 </style>
 
 <style id="solo-inspired-theme">
@@ -1236,7 +1247,13 @@ body.pomodoro-fallback-active{overflow:hidden!important}
       <article class="card"><div class="metric-label">Subjects studied</div><div class="metric" id="pomoSubjectCount">0</div></article>
       <article class="card"><div class="metric-label">Daily average (7 days)</div><div class="metric" id="pomoDailyAverage">0 min</div></article>
     </div>
-    <section class="card pomodoro-stats-panel"><div class="section-head"><h2>Focus time by subject</h2><span class="tag">All time</span></div><div id="pomoSubjectChart" class="pomo-chart"></div></section>
+    <section class="card pomodoro-stats-panel"><div class="section-head"><h2>Focus time by subject</h2><span class="tag">All time</span></div><div class="pomo-subject-visuals">
+      <div id="pomoSubjectChart" class="pomo-chart"></div>
+      <div class="pomo-subject-pie-wrap">
+        <div id="pomoSubjectPie" class="pomo-subject-pie" role="img" aria-label="Focus time share by subject"></div>
+        <div id="pomoSubjectPieLegend" class="pomo-subject-pie-legend"></div>
+      </div>
+    </div></section>
     <section class="card pomodoro-stats-panel"><div class="section-head"><h2>Daily focus time</h2><span class="tag">Last 7 days</span></div><div id="pomoDailyChart" class="pomo-daily-chart"></div></section>
 
     </section>
@@ -2632,8 +2649,23 @@ function renderPomodoroStats(){
  }
  document.getElementById('pomoDailyAverage').textContent=formatStudyDuration(Math.round(days.reduce((a,x)=>a+x.seconds,0)/7));
  const subjectChart=document.getElementById('pomoSubjectChart');
- if(!entries.length)subjectChart.innerHTML='<div class="stats-empty">Complete a focus session to see subject statistics.</div>';
- else{const max=entries[0][1];subjectChart.innerHTML=entries.map(([name,secs])=>'<div class="pomo-chart-row"><span class="pomo-chart-label">'+statsEscape(name)+'</span><div class="pomo-chart-track"><div class="pomo-chart-fill" style="width:'+Math.max(1,secs/max*100)+'%"></div></div><span class="pomo-chart-value">'+formatStudyDuration(secs)+'</span></div>').join('');}
+ const pie=document.getElementById('pomoSubjectPie'),pieLegend=document.getElementById('pomoSubjectPieLegend');
+ if(!entries.length){
+  subjectChart.innerHTML='<div class="stats-empty">Complete a focus session to see subject statistics.</div>';
+  if(pie)pie.style.background='conic-gradient(#293149 0deg 360deg)';
+  if(pieLegend)pieLegend.innerHTML='<div class="stats-empty">No subject data yet.</div>';
+ }else{
+  const max=entries[0][1];
+  subjectChart.innerHTML=entries.map(([name,secs])=>'<div class="pomo-chart-row"><span class="pomo-chart-label">'+statsEscape(name)+'</span><div class="pomo-chart-track"><div class="pomo-chart-fill" style="width:'+Math.max(1,secs/max*100)+'%"></div></div><span class="pomo-chart-value">'+formatStudyDuration(secs)+'</span></div>').join('');
+  const palette=['#8c69ed','#66e0cb','#f4b860','#ed729d','#6ea8fe','#b8a0ff','#8bd17c','#f08a5d','#65c3d9','#d68bdc'];
+  let angle=0;
+  const slices=entries.map(([name,secs],i)=>{
+   const start=angle;angle+=secs/totalSeconds*360;
+   return {name,secs,color:palette[i%palette.length],start,end:angle};
+  });
+  if(pie)pie.style.background='conic-gradient('+slices.map(x=>x.color+' '+x.start.toFixed(2)+'deg '+x.end.toFixed(2)+'deg').join(',')+')';
+  if(pieLegend)pieLegend.innerHTML=slices.map(x=>'<div class="pomo-pie-legend-row"><span class="pomo-pie-swatch" style="background:'+x.color+'"></span><span class="pomo-pie-legend-name">'+statsEscape(x.name)+'</span><strong>'+Math.round(x.secs/totalSeconds*100)+'%</strong></div>').join('');
+ }
  const maxDay=Math.max(1,...days.map(x=>x.seconds));
  document.getElementById('pomoDailyChart').innerHTML=days.map(x=>'<div class="pomo-day-col"><span class="pomo-day-value">'+formatStudyDuration(x.seconds)+'</span><div class="pomo-day-track"><div class="pomo-day-fill" style="height:'+(x.seconds/maxDay*100)+'%"></div></div><span class="pomo-day-label">'+x.label+'</span></div>').join('');
 }
