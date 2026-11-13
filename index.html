@@ -233,6 +233,28 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin:22px 0}
 
 .study-together-live{margin:18px 0}.study-live-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px}.study-live-member{border:1px solid var(--line);border-radius:14px;padding:16px;background:rgba(12,18,34,.72);min-width:0}.study-live-member h3{margin:0 0 6px}.study-live-member .study-live-clock{font-size:clamp(30px,5vw,48px);font-weight:800;letter-spacing:1px;margin:12px 0}.study-live-meta{display:flex;flex-wrap:wrap;gap:8px;color:var(--muted);font-size:12px}.study-live-settings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}.study-live-settings label{display:grid;gap:5px;font-size:12px;color:var(--muted)}.study-live-settings input{width:100%;min-width:0}.study-live-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.study-live-actions button{flex:1}.study-live-status{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#9e8bff;font-weight:800}.study-together-live:fullscreen,.study-together-live.study-live-fullscreen{background:#080d19;color:#fff;overflow:auto;padding:24px;box-sizing:border-box}.study-together-live:fullscreen .study-live-grid,.study-together-live.study-live-fullscreen .study-live-grid{min-height:65vh;align-items:stretch}.study-together-live:fullscreen .study-live-member,.study-together-live.study-live-fullscreen .study-live-member{display:flex;flex-direction:column;justify-content:center;text-align:center}.study-together-live:fullscreen .study-live-clock,.study-together-live.study-live-fullscreen .study-live-clock{font-size:clamp(52px,10vw,110px)}@media(max-width:650px){.study-live-grid{grid-template-columns:1fr}.study-live-settings{grid-template-columns:1fr 1fr}}
 
+
+/* Accountability layout refinement */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.top-actions{display:flex;align-items:center;gap:10px}
+.guild-bell{position:relative;width:42px;height:42px;display:grid;place-items:center;border:1px solid #514675;border-radius:12px;background:#17152d;color:#eee;font-size:19px;cursor:pointer}
+.guild-bell span{position:absolute;right:-5px;top:-6px;min-width:17px;height:17px;padding:0 4px;border-radius:99px;background:#f06b8d;color:#fff;font-size:10px;font-weight:800;line-height:17px}
+#accountabilityFriendsCard{position:fixed;z-index:1000;top:76px;right:22px;width:min(370px,calc(100vw - 28px));max-height:calc(100vh - 96px);overflow:auto;box-shadow:0 18px 55px #000b;display:none}
+#accountabilityFriendsCard.guild-friends-open{display:block}
+#studyTogetherCard{grid-column:1/-1;min-height:360px;padding:24px}
+#studyTogetherCard .accountability-subsection{margin-top:20px}
+#studyTogetherCard #studyIncomingInvites,#studyTogetherCard #studySessionHost{padding:18px;min-height:76px}
+#guildChatCard{grid-column:1/-1}
+#guildChatCard .guild-chat-messages{height:165px;max-height:165px}
+#guildChatCard .guild-chat-toolbar{max-width:620px}
+#guildChatCard .guild-chat-compose{max-width:760px}
+@media(max-width:650px){#accountabilityFriendsCard{top:68px;right:10px;width:calc(100vw - 20px)}#studyTogetherCard{grid-column:auto;min-height:0;padding:16px}#guildChatCard .guild-chat-messages{height:145px;max-height:145px}.top{align-items:flex-start}}
+
+/* Study Together live panel belongs inside Accountability Quick Invite */
+#studyTogetherCard #studyTogetherLivePanel{margin-top:18px;width:100%;box-sizing:border-box}
+#studyTogetherCard #studyTogetherLivePanel .study-live-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+#studyTogetherCard #studyTogetherLivePanel .study-live-member{min-width:0}
+@media(max-width:650px){#studyTogetherCard #studyTogetherLivePanel .study-live-grid{grid-template-columns:1fr}}
 </style>
 
 <style id="solo-inspired-theme">
@@ -937,7 +959,7 @@ body.pomodoro-fallback-active{overflow:hidden!important}
 <main>
   <div class="top">
     <div><h1>Daily Habit Tracker</h1><div class="sub">Small actions. Consistent days.</div></div>
-    <div class="date" id="todayLabel"></div>
+    <div class="top-actions"><div class="date" id="todayLabel"></div><button type="button" id="guildBellBtn" class="guild-bell" aria-label="Open friend network" title="Friends & invitations">🔔<span id="guildBellCount" hidden>0</span></button></div>
   </div>
 
 
@@ -1176,10 +1198,6 @@ body.pomodoro-fallback-active{overflow:hidden!important}
       </div>
       <div class="pomodoro-session-count"><strong id="pomodoroSessions">0</strong><span>completed focus sessions</span></div>
     </section>
-    <section class="card study-together-live" id="studyTogetherLivePanel">
-      <div class="section-head"><div><span class="tag">GUILD LINK</span><h2>Study Together · Live</h2><p class="history-note">Your Pomodoro subject list is shared with this view. Each hunter keeps independent timings.</p></div><button type="button" id="studyTogetherFullscreen" class="pomodoro-fullscreen" aria-label="Fullscreen side-by-side study view" title="Fullscreen side-by-side">⛶</button></div>
-      <div id="studyTogetherLiveContent"><div class="accountability-empty">Accept a Quick Invite from Accountability to see your friend's live session here.</div></div>
-    </section>
     <section class="card pomodoro-history-card">
       <div class="section-head"><h2>Recent study sessions</h2><span class="tag">Your history</span></div>
       <div id="pomodoroHistory" class="pomodoro-history"><div class="stats-empty">No study sessions yet.</div></div>
@@ -1237,6 +1255,10 @@ body.pomodoro-fallback-active{overflow:hidden!important}
         <div class="accountability-subsection"><h4>Incoming study invites</h4><div id="studyIncomingInvites" class="accountability-list"><div class="accountability-placeholder">No pending invites.</div></div></div>
         <div class="accountability-subsection"><h4>Your study session</h4><div id="studySessionHost" class="accountability-placeholder">Choose Study with a friend to send a quick invite.</div></div>
         <div class="accountability-feedback" id="studyFeedback" role="status" aria-live="polite">Each hunter controls their own subject, focus duration and break duration.</div>
+        <section class="card study-together-live" id="studyTogetherLivePanel">
+          <div class="section-head"><div><span class="tag">LIVE PARTY</span><h2>Side-by-side study session</h2><p class="history-note">Subjects come from your existing Pomodoro subject list. Each hunter keeps independent timings.</p></div><button type="button" id="studyTogetherFullscreen" class="pomodoro-fullscreen" aria-label="Fullscreen side-by-side study view" title="Fullscreen side-by-side">⛶</button></div>
+          <div id="studyTogetherLiveContent"><div class="accountability-empty">Accept a Quick Invite to see both study sessions here.</div></div>
+        </section>
       </article>
       <article class="card accountability-card accountability-wide" id="guildChatCard">
         <span class="accountability-status" id="guildChatStatus">SIGN IN TO CHAT</span>
@@ -1390,6 +1412,7 @@ async function loadAccountabilityFriends(){
   incoming=requests.map(x=>({...x,display_name:names.get(x.requester_id)||'Hunter'}));
  }
  renderIncomingFriendRequests(incoming);
+ updateGuildBellCount();
  const {data:links,error:linksError}=await cloudClient.from('friendships').select('user_a,user_b,created_at').or('user_a.eq.'+uid+',user_b.eq.'+uid);
  if(!cloudUser||cloudUser.id!==uid)return;
  if(linksError){setFriendsFeedback('Could not load friends: '+linksError.message,'error');return;}
@@ -1584,8 +1607,24 @@ async function loadStudyTogether(){
  const profileIds=[...new Set((invites||[]).map(x=>x.inviter_id===uid?x.invitee_id:x.inviter_id))];
  let names=new Map();if(profileIds.length){const {data:p}=await cloudClient.from('hunter_profiles').select('user_id,display_name').in('user_id',profileIds);names=new Map((p||[]).map(x=>[x.user_id,x.display_name||'Hunter']));}
  renderStudyIncoming(pending,names);
+ updateGuildBellCount(pending.length);
  const active=(invites||[]).find(x=>x.status==='accepted');
- if(!active){studyCurrentInvite=null;studyCurrentInviteRow=null;studyCurrentMembers=[];renderStudyLivePanel();const host=document.getElementById('studySessionHost');if(host)host.textContent='No active session. Invite a friend from the Friends list.';return;}
+ if(!active){
+  const outgoing=(invites||[]).find(x=>x.status==='pending'&&x.inviter_id===uid);
+  studyCurrentInvite=outgoing?.id||null;studyCurrentInviteRow=null;studyCurrentMembers=[];
+  renderStudyLivePanel();
+  const host=document.getElementById('studySessionHost');
+  if(host){
+   if(outgoing){
+    const friendId=outgoing.invitee_id;
+    host.innerHTML='<div class="study-person"><div><strong>Invitation sent</strong><small>Waiting for '+studyEscape(names.get(friendId)||'your friend')+' to accept</small></div><button type="button" id="cancelStudyInvite">Cancel invite</button></div>';
+    const cancel=document.getElementById('cancelStudyInvite');
+    if(cancel)cancel.onclick=async()=>{const {error:cancelError}=await cloudClient.from('study_together_invites').update({status:'cancelled'}).eq('id',outgoing.id).eq('inviter_id',uid).eq('status','pending');if(cancelError){studyFeedback('Could not cancel invite: '+cancelError.message,'error');return;}studyCurrentInvite=null;await loadStudyTogether();studyFeedback('Study invitation cancelled.','ok');};
+   }else host.textContent='No active session. Invite a friend from the Friends list.';
+  }
+  updateGuildBellCount(pending.length);
+  return;
+ }
  studyCurrentInvite=active.id;studyCurrentInviteRow=active;
  const {data:members,error:memberError}=await cloudClient.from('study_together_presence').select('user_id,subject,focus_minutes,break_minutes,status,phase_started_at,phase_ends_at,updated_at').eq('session_id',active.id);
  if(memberError){studyFeedback('Could not load session participants: '+memberError.message,'error');return;}
@@ -1594,6 +1633,14 @@ async function loadStudyTogether(){
  const {data:profiles}=await cloudClient.from('hunter_profiles').select('user_id,display_name').in('user_id',[active.inviter_id,active.invitee_id]);
  studyCurrentProfiles=new Map((profiles||[]).map(x=>[x.user_id,x.display_name||'Hunter']));studyCurrentMembers=members||[];
  renderStudyLivePanel();
+ const sessionHost=document.getElementById('studySessionHost');
+ if(sessionHost){
+  const friend=studyCurrentMembers.find(x=>x.user_id!==uid);
+  const mineNow=studyCurrentMembers.find(x=>x.user_id===uid);
+  sessionHost.innerHTML='<div class="study-person"><div><strong>Study session active</strong><small>With '+studyEscape(studyCurrentProfiles.get(friend?.user_id)||'Friend')+' · Your status: '+studyEscape(studyStatusLabel(mineNow?.status))+' · Subject: '+studyEscape(mineNow?.subject||'Choose in Pomodoro')+'</small></div><button type="button" id="openStudyPomodoro" class="primary">Open live session</button></div>';
+  const openBtn=document.getElementById('openStudyPomodoro');
+  if(openBtn)openBtn.onclick=()=>{document.querySelector('.page-tab[data-page="accountabilityPage"]')?.click();document.getElementById('studyTogetherLivePanel')?.scrollIntoView({behavior:'smooth',block:'start'});};
+ }
  if(studyTickHandle)clearInterval(studyTickHandle);
  studyTickHandle=setInterval(()=>{
   updateStudyLiveClocks();
@@ -2518,6 +2565,14 @@ document.addEventListener('keydown',e=>{
  }
 });
 
+function updateGuildBellCount(studyCount=0){
+ const friendCount=document.querySelectorAll('#incomingFriendRequests [data-friend-action="accept"]').length;
+ const count=friendCount+studyCount,el=document.getElementById('guildBellCount');
+ if(el){el.textContent=count>9?'9+':String(count);el.hidden=count===0;}
+}
+const guildBell=document.getElementById('guildBellBtn');
+if(guildBell)guildBell.addEventListener('click',()=>{const panel=document.getElementById('accountabilityFriendsCard');if(panel)panel.classList.toggle('guild-friends-open');});
+document.addEventListener('click',e=>{const panel=document.getElementById('accountabilityFriendsCard'),bell=document.getElementById('guildBellBtn');if(panel&&panel.classList.contains('guild-friends-open')&&!panel.contains(e.target)&&!bell?.contains(e.target))panel.classList.remove('guild-friends-open');});
 document.querySelectorAll('.page-tab').forEach(b=>b.addEventListener('click',()=>{const page=b.dataset.page;document.getElementById('dashboardPage').hidden=page!=='dashboardPage';document.getElementById('statisticsPage').hidden=page!=='statisticsPage';document.getElementById('managementPage').hidden=page!=='managementPage';document.getElementById('pomodoroPage').hidden=page!=='pomodoroPage';document.getElementById('accountabilityPage').hidden=page!=='accountabilityPage';document.querySelectorAll('.page-tab').forEach(x=>x.classList.toggle('active',x===b));if(page==='statisticsPage')renderStatistics();if(page==='pomodoroPage')renderPomodoroStats();}));
 document.querySelectorAll('.range-btn').forEach(b=>b.addEventListener('click',()=>{statsDays=Number(b.dataset.range);document.querySelectorAll('.range-btn').forEach(x=>x.classList.toggle('active',x===b));renderStatistics();}));
 
