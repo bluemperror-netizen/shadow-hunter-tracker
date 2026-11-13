@@ -1,18 +1,18 @@
-# Shadow Hunter — Friends integration (first working stage)
+# Shadow Hunter — Guild Chat stage
 
-## Included
-- Existing Shadow Hunter app, preserving habits, XP, goals and Pomodoro.
-- Supabase-backed Hunter invite code.
-- Send friend requests by invite code.
-- View incoming requests and accept/decline.
-- Display accepted friends.
-- Realtime refresh for incoming requests and friendship changes.
+## Added
+- Private one-to-one chat with accepted friends.
+- Friend selector populated from accepted friendships.
+- Message history (latest 200 messages).
+- Send messages up to 2,000 characters.
+- Realtime incoming/outgoing message refresh through Supabase Realtime.
+- Chat access is governed by the existing `accountability_messages` RLS policies.
 
-## Before testing
-1. Keep `index.html`, `config.js` and `accountability_setup.sql` together.
-2. The Accountability SQL setup must already have been run in the same Supabase project.
-3. Serve the folder with VS Code Live Server (do not open index.html with `file://`).
-4. Log in with an existing account.
+## Deploy
+1. Replace the files in your project/repository with these files.
+2. Keep `index.html`, `config.js` and `accountability_setup.sql` in the same root folder.
+3. The Accountability SQL must already have been run.
+4. Commit and push to GitHub; Vercel will deploy the update automatically.
 
-## Not integrated in this stage
-Direct/room chat, reminders, room-code joining, live presence and WebRTC screen sharing are not yet connected. They will be added and tested in later stages.
+## Notes
+This stage implements direct messages only. Study-room chat, reminders, presence and screen sharing are not included yet.

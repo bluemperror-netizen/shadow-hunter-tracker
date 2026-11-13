@@ -204,6 +204,19 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin:22px 0}
 .accountability-person-main{min-width:0}.accountability-person-main strong{display:block;overflow-wrap:anywhere;font-size:13px}.accountability-person-main small{display:block;color:var(--muted);font-size:10px}
 .accountability-person-actions{display:flex;gap:6px;flex-wrap:wrap}.accountability-person-actions button{padding:6px 9px;font-size:11px}
 .accountability-empty{padding:12px;color:var(--muted);font-size:12px;border:1px dashed var(--line);border-radius:9px}
+
+.guild-chat-toolbar{display:grid;grid-template-columns:auto minmax(180px,1fr) auto;align-items:center;gap:9px;margin:12px 0}
+.guild-chat-toolbar label{font-size:12px;color:var(--muted);font-weight:700}
+.guild-chat-toolbar select{min-width:0;padding:10px;border:1px solid var(--line);border-radius:8px;background:#0b1020;color:var(--text)}
+.guild-chat-messages{height:300px;overflow:auto;display:flex;flex-direction:column;gap:9px;padding:12px;border:1px solid var(--line);border-radius:10px;background:#0b1020}
+.guild-chat-message{max-width:min(82%,620px);padding:9px 11px;border:1px solid #343b59;border-radius:11px;background:#151d32;overflow-wrap:anywhere}
+.guild-chat-message.mine{align-self:flex-end;background:#30254e;border-color:#7055a5}
+.guild-chat-message strong{display:block;font-size:10px;color:#cbb8ff;margin-bottom:4px}
+.guild-chat-message p{margin:0;font-size:13px;white-space:pre-wrap}
+.guild-chat-message small{display:block;text-align:right;color:var(--muted);font-size:9px;margin-top:5px}
+.guild-chat-compose{display:flex;gap:8px;margin-top:9px}
+.guild-chat-compose input{flex:1;min-width:0;padding:11px;border:1px solid var(--line);border-radius:8px;background:#0b1020;color:var(--text)}
+.guild-chat-compose button{min-width:82px}
 @media(max-width:520px){.accountability-inline-form{flex-direction:column}.accountability-inline-form button{width:100%}.accountability-invite-box{align-items:flex-start;flex-direction:column}.accountability-person{align-items:flex-start;flex-direction:column}.accountability-person-actions{width:100%}.accountability-person-actions button{flex:1}}
 
 @media(max-width:650px){.accountability-grid{grid-template-columns:1fr}.accountability-wide{grid-column:auto}}
@@ -1208,11 +1221,25 @@ body.pomodoro-fallback-active{overflow:hidden!important}
         <div class="accountability-placeholder">No study rooms yet. Room creation and live participant status will activate after setup.</div>
         <ul class="accountability-feature-list"><li>Private room codes</li><li>Pomodoro-based group sessions</li><li>See who's focusing or on break</li></ul>
       </article>
-      <article class="card accountability-card">
-        <span class="accountability-status">BACKEND SETUP REQUIRED</span>
+      <article class="card accountability-card accountability-wide" id="guildChatCard">
+        <span class="accountability-status" id="guildChatStatus">SIGN IN TO CHAT</span>
         <h3>💬 Guild chat</h3>
-        <p>Send direct messages and room messages while studying together.</p>
-        <div class="accountability-placeholder">Messages will sync in real time between signed-in friends.</div>
+        <p>Private messages with people on your accepted friends list.</p>
+        <div class="guild-chat-toolbar">
+          <label for="chatFriendSelect">Chat with</label>
+          <select id="chatFriendSelect" aria-label="Choose a friend">
+            <option value="">Select an accepted friend</option>
+          </select>
+          <button type="button" id="refreshChatBtn">Refresh</button>
+        </div>
+        <div id="guildChatMessages" class="guild-chat-messages" aria-live="polite">
+          <div class="accountability-empty">Choose a friend to open your private chat.</div>
+        </div>
+        <form id="guildChatForm" class="guild-chat-compose">
+          <input id="guildChatInput" type="text" maxlength="2000" placeholder="Write a message…" autocomplete="off" disabled>
+          <button type="submit" class="primary" id="guildChatSendBtn" disabled>Send</button>
+        </form>
+        <div id="guildChatFeedback" class="accountability-feedback" role="status" aria-live="polite">Messages are private to you and the selected friend.</div>
       </article>
       <article class="card accountability-card">
         <span class="accountability-status">BACKEND SETUP REQUIRED</span>
@@ -1307,8 +1334,15 @@ function renderIncomingFriendRequests(rows){
 }
 function renderAcceptedFriends(rows){
  const host=document.getElementById('acceptedFriendsList');if(!host)return;
- if(!rows.length){host.innerHTML='<div class="accountability-empty">No friends yet. Share your invite code to get started.</div>';return;}
- host.innerHTML=rows.map(r=>'<div class="accountability-person"><div class="accountability-person-main"><strong>'+escapeHtml(r.display_name||'Hunter')+'</strong><small>Friend since '+new Date(r.created_at).toLocaleDateString()+'</small></div></div>').join('');
+ const select=document.getElementById('chatFriendSelect');
+ const previous=select?select.value:'';
+ if(!rows.length){host.innerHTML='<div class="accountability-empty">No friends yet. Share your invite code to get started.</div>';}
+ else host.innerHTML=rows.map(r=>'<div class="accountability-person"><div class="accountability-person-main"><strong>'+escapeHtml(r.display_name||'Hunter')+'</strong><small>Friend since '+new Date(r.created_at).toLocaleDateString()+'</small></div><button type="button" data-chat-friend="'+escapeHtml(r.user_id)+'">Message</button></div>').join('');
+ if(select){
+  select.innerHTML='<option value="">Select an accepted friend</option>'+rows.map(r=>'<option value="'+escapeHtml(r.user_id)+'">'+escapeHtml(r.display_name||'Hunter')+'</option>').join('');
+  if(rows.some(r=>r.user_id===previous))select.value=previous;
+  updateGuildChatControls();
+ }
 }
 async function loadAccountabilityFriends(){
  if(!cloudClient||!cloudUser||!cloudReady)return;
@@ -1348,7 +1382,7 @@ async function loadAccountabilityFriends(){
   const {data:profiles,error:profilesError}=await cloudClient.from('hunter_profiles').select('user_id,display_name').in('user_id',friendIds);
   if(profilesError){setFriendsFeedback('Friends loaded, but names could not be fetched: '+profilesError.message,'error');return;}
   const names=new Map((profiles||[]).map(x=>[x.user_id,x.display_name]));
-  friends=(links||[]).map(x=>{const id=x.user_a===uid?x.user_b:x.user_a;return {display_name:names.get(id)||'Hunter',created_at:x.created_at};});
+  friends=(links||[]).map(x=>{const id=x.user_a===uid?x.user_b:x.user_a;return {user_id:id,display_name:names.get(id)||'Hunter',created_at:x.created_at};});
  }
  renderAcceptedFriends(friends);
  setFriendsFeedback('Your invite code is ready. Share it with a friend to connect.','ok');
@@ -1390,7 +1424,100 @@ async function respondToFriendRequest(requestId,decision){
  setFriendsFeedback(decision==='accept'?'Friend request accepted. You are now connected.':'Friend request declined.','ok');
  await loadAccountabilityFriends();
 }
+
+let guildChatChannel=null,guildChatLoading=false;
+function setGuildChatFeedback(message,kind=''){
+ const el=document.getElementById('guildChatFeedback');
+ if(el){el.textContent=message;el.className='accountability-feedback'+(kind?' '+kind:'');}
+}
+function updateGuildChatControls(){
+ const select=document.getElementById('chatFriendSelect');
+ const input=document.getElementById('guildChatInput');
+ const send=document.getElementById('guildChatSendBtn');
+ const enabled=!!(cloudClient&&cloudUser&&cloudReady&&select&&select.value);
+ if(input)input.disabled=!enabled;
+ if(send)send.disabled=!enabled;
+ const status=document.getElementById('guildChatStatus');
+ if(status)status.textContent=enabled?'PRIVATE CHAT READY':(cloudUser?'SELECT A FRIEND':'SIGN IN TO CHAT');
+}
+function renderGuildChatMessages(rows){
+ const host=document.getElementById('guildChatMessages');if(!host)return;
+ if(!rows.length){host.innerHTML='<div class="accountability-empty">No messages yet. Start the conversation.</div>';return;}
+ const uid=cloudUser?.id;
+ host.innerHTML=rows.map(m=>{
+  const mine=m.sender_id===uid;
+  const stamp=new Date(m.created_at).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+  return '<div class="guild-chat-message'+(mine?' mine':'')+'"><strong>'+ (mine?'You':'Friend') +'</strong><p>'+escapeHtml(m.body)+'</p><small>'+escapeHtml(stamp)+'</small></div>';
+ }).join('');
+ host.scrollTop=host.scrollHeight;
+}
+async function loadGuildChat(){
+ const select=document.getElementById('chatFriendSelect');
+ const friendId=select?.value;
+ const host=document.getElementById('guildChatMessages');
+ if(!cloudClient||!cloudUser||!cloudReady){if(host)host.innerHTML='<div class="accountability-empty">Sign in to use Guild chat.</div>';updateGuildChatControls();return;}
+ if(!friendId){if(host)host.innerHTML='<div class="accountability-empty">Choose a friend to open your private chat.</div>';updateGuildChatControls();return;}
+ if(guildChatLoading)return;
+ guildChatLoading=true;
+ if(host)host.innerHTML='<div class="accountability-empty">Loading messages…</div>';
+ const uid=cloudUser.id;
+ const {data:rows,error}=await cloudClient.from('accountability_messages')
+  .select('id,sender_id,recipient_id,body,created_at')
+  .or('and(sender_id.eq.'+uid+',recipient_id.eq.'+friendId+'),and(sender_id.eq.'+friendId+',recipient_id.eq.'+uid+')')
+  .order('created_at',{ascending:true}).limit(200);
+ guildChatLoading=false;
+ if(!cloudUser||cloudUser.id!==uid||document.getElementById('chatFriendSelect')?.value!==friendId)return;
+ if(error){if(host)host.innerHTML='<div class="accountability-empty">Could not load messages.</div>';setGuildChatFeedback('Chat load failed: '+error.message,'error');return;}
+ renderGuildChatMessages(rows||[]);
+ setGuildChatFeedback('Private conversation loaded. New messages update automatically.','ok');
+ updateGuildChatControls();
+}
+async function sendGuildChatMessage(event){
+ event?.preventDefault();
+ const input=document.getElementById('guildChatInput');
+ const friendId=document.getElementById('chatFriendSelect')?.value;
+ const body=(input?.value||'').trim();
+ if(!cloudClient||!cloudUser||!cloudReady){setGuildChatFeedback('Sign in before sending messages.','error');return;}
+ if(!friendId){setGuildChatFeedback('Choose a friend first.','error');return;}
+ if(!body){input?.focus();return;}
+ if(body.length>2000){setGuildChatFeedback('Messages must be 2,000 characters or fewer.','error');return;}
+ const uid=cloudUser.id;
+ const {error}=await cloudClient.from('accountability_messages').insert({sender_id:uid,recipient_id:friendId,body});
+ if(error){setGuildChatFeedback('Message was not sent: '+error.message,'error');return;}
+ if(input)input.value='';
+ setGuildChatFeedback('Message sent.','ok');
+ await loadGuildChat();
+}
+function initGuildChatUI(){
+ const select=document.getElementById('chatFriendSelect');
+ if(select&&!select.dataset.bound){select.dataset.bound='1';select.addEventListener('change',()=>{updateGuildChatControls();loadGuildChat();});}
+ const form=document.getElementById('guildChatForm');
+ if(form&&!form.dataset.bound){form.dataset.bound='1';form.addEventListener('submit',sendGuildChatMessage);}
+ const refresh=document.getElementById('refreshChatBtn');
+ if(refresh&&!refresh.dataset.bound){refresh.dataset.bound='1';refresh.addEventListener('click',loadGuildChat);}
+ const friends=document.getElementById('acceptedFriendsList');
+ if(friends&&!friends.dataset.chatBound){friends.dataset.chatBound='1';friends.addEventListener('click',e=>{
+  const btn=e.target.closest('button[data-chat-friend]');if(!btn)return;
+  const picker=document.getElementById('chatFriendSelect');if(picker){picker.value=btn.dataset.chatFriend;updateGuildChatControls();loadGuildChat();}
+ });}
+ updateGuildChatControls();
+}
+function subscribeGuildChat(){
+ if(!cloudClient||!cloudUser)return;
+ if(guildChatChannel){cloudClient.removeChannel(guildChatChannel);guildChatChannel=null;}
+ const uid=cloudUser.id;
+ guildChatChannel=cloudClient.channel('guild-chat-'+uid)
+  .on('postgres_changes',{event:'INSERT',schema:'public',table:'accountability_messages'},payload=>{
+   const m=payload.new||{},selected=document.getElementById('chatFriendSelect')?.value;
+   if(cloudUser&&cloudUser.id===uid&&selected&&(m.sender_id===uid||m.recipient_id===uid)&&
+      ((m.sender_id===uid&&m.recipient_id===selected)||(m.sender_id===selected&&m.recipient_id===uid))){
+    loadGuildChat();
+   }
+  }).subscribe();
+}
+
 function initAccountabilityUI(){
+ initGuildChatUI();
  const send=document.getElementById('sendFriendRequestBtn');
  if(send&&!send.dataset.bound){send.dataset.bound='1';send.addEventListener('click',sendFriendRequest);}
  const input=document.getElementById('friendInviteInput');
@@ -1459,6 +1586,8 @@ async function syncFromCloud(user){
  cloudReady=true;
  initAccountabilityUI();
  await loadAccountabilityFriends();
+ initGuildChatUI();
+ subscribeGuildChat();
  if(accountabilityChannel){await cloudClient.removeChannel(accountabilityChannel);accountabilityChannel=null;}
  accountabilityChannel=cloudClient.channel('accountability-'+user.id)
   .on('postgres_changes',{event:'*',schema:'public',table:'friend_requests',filter:'addressee_id=eq.'+user.id},()=>{if(cloudUser&&cloudUser.id===user.id&&cloudReady)loadAccountabilityFriends();})
@@ -1488,6 +1617,7 @@ async function initCloud(){
    ++authSyncToken;clearTimeout(cloudWriteTimer);cloudReady=false;cloudUser=null;
    if(cloudChannel){cloudClient.removeChannel(cloudChannel);cloudChannel=null;}
    if(accountabilityChannel){cloudClient.removeChannel(accountabilityChannel);accountabilityChannel=null;}
+   if(guildChatChannel){cloudClient.removeChannel(guildChatChannel);guildChatChannel=null;}
    // Never leave the previous account's profile visible after logout.
    data=createFreshPlayerData();ensureProgress();render();
    renderPomodoroSubjects();renderPomodoroHistory();
