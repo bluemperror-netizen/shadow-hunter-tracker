@@ -255,6 +255,19 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin:22px 0}
 #studyTogetherCard #studyTogetherLivePanel .study-live-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 #studyTogetherCard #studyTogetherLivePanel .study-live-member{min-width:0}
 @media(max-width:650px){#studyTogetherCard #studyTogetherLivePanel .study-live-grid{grid-template-columns:1fr}}
+
+/* Solo Leveling-style circular progress for each Study Together participant */
+.study-arc-wrap{position:relative;width:164px;height:164px;margin:12px auto 16px;display:grid;place-items:center}
+.study-progress-arc{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);overflow:visible}
+.study-arc-track{fill:none;stroke:rgba(150,160,195,.18);stroke-width:8}
+.study-arc-value{fill:none;stroke:#a78bfa;stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset .8s linear;filter:drop-shadow(0 0 5px rgba(167,139,250,.45))}
+.study-arc-time{font-size:30px;font-weight:850;letter-spacing:1px;font-variant-numeric:tabular-nums;color:var(--text)}
+.study-live-member{display:flex;flex-direction:column;justify-content:flex-start}
+.study-live-member .study-live-meta{justify-content:center}
+.study-live-member .study-live-settings{margin-top:16px}
+.study-live-member .study-live-actions{margin-top:auto;padding-top:12px}
+.study-live-member .danger{border-color:rgba(248,113,113,.5);color:#fecaca;background:rgba(127,29,29,.22)}
+#studyTogetherLivePanel{margin-top:16px}
 </style>
 
 <style id="solo-inspired-theme">
@@ -1253,8 +1266,6 @@ body.pomodoro-fallback-active{overflow:hidden!important}
         <h3>📚 Study Together</h3>
         <p>Invite an accepted friend. You each choose your own subject and timer settings.</p>
         <div class="accountability-subsection"><h4>Incoming study invites</h4><div id="studyIncomingInvites" class="accountability-list"><div class="accountability-placeholder">No pending invites.</div></div></div>
-        <div class="accountability-subsection"><h4>Your study session</h4><div id="studySessionHost" class="accountability-placeholder">Choose Study with a friend to send a quick invite.</div></div>
-        <div class="accountability-feedback" id="studyFeedback" role="status" aria-live="polite">Each hunter controls their own subject, focus duration and break duration.</div>
         <section class="card study-together-live" id="studyTogetherLivePanel">
           <div class="section-head"><div><span class="tag">LIVE PARTY</span><h2>Side-by-side study session</h2><p class="history-note">Subjects come from your existing Pomodoro subject list. Each hunter keeps independent timings.</p></div><button type="button" id="studyTogetherFullscreen" class="pomodoro-fullscreen" aria-label="Fullscreen side-by-side study view" title="Fullscreen side-by-side">⛶</button></div>
           <div id="studyTogetherLiveContent"><div class="accountability-empty">Accept a Quick Invite to see both study sessions here.</div></div>
@@ -1665,8 +1676,13 @@ function renderStudyLivePanel(){
  const memberCard=(m,isMe)=>{
   if(!m)return '<article class="study-live-member"><div class="study-live-status">WAITING</div><h3>Friend</h3><div class="study-live-clock">--:--</div><p>Waiting for friend to join this session.</p></article>';
   const name=isMe?'You':(studyCurrentProfiles.get(m.user_id)||'Friend');
-  const settings=isMe?'<div class="study-live-settings"><label>Focus minutes<input id="studyMyFocus" type="number" min="1" max="180" value="'+Number(m.focus_minutes||25)+'" '+(started?'disabled':'')+'></label><label>Break minutes<input id="studyMyBreak" type="number" min="1" max="60" value="'+Number(m.break_minutes||5)+'" '+(started?'disabled':'')+'></label></div><div class="study-live-actions">'+(started?'':'<button type="button" id="studySavePrefs">Save my settings</button>')+(started?'<button type="button" id="studyStartMyFocus" class="primary">Start my focus</button><button type="button" id="studyStartMyBreak">Start my break</button><button type="button" id="studyFinish">Finish</button>':'')+'</div>':'';
-  return '<article class="study-live-member"><div class="study-live-status">'+studyEscape(studyStatusLabel(m.status))+'</div><h3>'+studyEscape(name)+'</h3><div class="study-live-clock" data-study-clock="'+studyEscape(m.user_id)+'">'+studyCountdown(m.phase_ends_at,m.status)+'</div><div class="study-live-meta"><span>Subject: '+studyEscape(m.subject||'Not selected')+'</span><span>Focus: '+Number(m.focus_minutes||25)+' min</span><span>Break: '+Number(m.break_minutes||5)+' min</span></div>'+settings+'</article>';
+  const settings=isMe?'<div class="study-live-settings"><label>Focus minutes<input id="studyMyFocus" type="number" min="1" max="180" value="'+Number(m.focus_minutes||25)+'" '+(started?'disabled':'')+'></label><label>Break minutes<input id="studyMyBreak" type="number" min="1" max="60" value="'+Number(m.break_minutes||5)+'" '+(started?'disabled':'')+'></label></div><div class="study-live-actions">'+(started?'':'<button type="button" id="studySavePrefs">Save my settings</button>')+(started?'<button type="button" id="studyStartMyFocus" class="primary">Start my focus</button><button type="button" id="studyStartMyBreak">Start my break</button>'+(m.status==='focus'?'<button type="button" id="studyFinishEarly" class="danger">Finish Early</button>':'<button type="button" id="studyFinish">Finish session</button>'):'')+'</div>':'';
+  const totalSeconds=Math.max(1,(Number(m.status==='break'?m.break_minutes:m.focus_minutes)||25)*60);
+  const remainingSeconds=(m.status==='focus'||m.status==='break')?Math.max(0,Math.ceil((new Date(m.phase_ends_at).getTime()-Date.now())/1000)):0;
+  const progress=(m.status==='focus'||m.status==='break')?Math.max(0,Math.min(1,(totalSeconds-remainingSeconds)/totalSeconds)):0;
+  const circumference=2*Math.PI*48,offset=circumference*(1-progress);
+  const arc='<div class="study-arc-wrap"><svg class="study-progress-arc" viewBox="0 0 120 120" role="img" aria-label="Timer progress"><circle class="study-arc-track" cx="60" cy="60" r="48"></circle><circle class="study-arc-value" cx="60" cy="60" r="48" stroke-dasharray="'+circumference.toFixed(2)+'" stroke-dashoffset="'+offset.toFixed(2)+'"></circle></svg><div class="study-arc-time" data-study-clock="'+studyEscape(m.user_id)+'">'+studyCountdown(m.phase_ends_at,m.status)+'</div></div>';
+  return '<article class="study-live-member"><div class="study-live-status">'+studyEscape(studyStatusLabel(m.status))+'</div><h3>'+studyEscape(name)+'</h3>'+arc+'<div class="study-live-meta"><span>Subject: '+studyEscape(m.subject||'Not selected')+'</span><span>Focus: '+Number(m.focus_minutes||25)+' min</span><span>Break: '+Number(m.break_minutes||5)+' min</span></div>'+settings+'</article>';
  };
  host.innerHTML='<div class="study-live-grid">'+memberCard(me,true)+memberCard(friend,false)+'</div><div class="study-live-actions">'+(!started?'<button type="button" id="studyStartTogether" class="primary" '+(bothReady?'':'disabled')+'>Start together</button>':'<span class="tag">Shared start · '+new Date(studyCurrentInviteRow.session_started_at).toLocaleTimeString()+'</span>')+'</div><p class="history-note">Choose your subject in the Pomodoro subject selector above. Your friend chooses theirs on their own account. Save settings before the shared start.</p>';
   const saveBtn=document.getElementById('studySavePrefs');if(saveBtn)saveBtn.onclick=()=>saveStudyPrefs(studyCurrentInvite);
@@ -1674,9 +1690,21 @@ function renderStudyLivePanel(){
   const startFocus=document.getElementById('studyStartMyFocus');if(startFocus)startFocus.onclick=()=>setStudyPhase(studyCurrentInvite,'focus');
   const startBreak=document.getElementById('studyStartMyBreak');if(startBreak)startBreak.onclick=()=>setStudyPhase(studyCurrentInvite,'break');
   const finish=document.getElementById('studyFinish');if(finish)finish.onclick=()=>setStudyPhase(studyCurrentInvite,'finished');
+  const finishEarly=document.getElementById('studyFinishEarly');if(finishEarly)finishEarly.onclick=()=>setStudyPhase(studyCurrentInvite,'finished');
   updateStudyLiveClocks();
 }
-function updateStudyLiveClocks(){document.querySelectorAll('[data-study-clock]').forEach(el=>{const m=studyCurrentMembers.find(x=>x.user_id===el.dataset.studyClock);if(m)el.textContent=studyCountdown(m.phase_ends_at,m.status);});}
+function updateStudyLiveClocks(){
+ document.querySelectorAll('[data-study-clock]').forEach(el=>{
+  const m=studyCurrentMembers.find(x=>x.user_id===el.dataset.studyClock);if(!m)return;
+  el.textContent=studyCountdown(m.phase_ends_at,m.status);
+  const card=el.closest('.study-live-member');if(!card)return;
+  const circle=card.querySelector('.study-arc-value');if(!circle)return;
+  const total=Math.max(1,(Number(m.status==='break'?m.break_minutes:m.focus_minutes)||25)*60);
+  const remaining=(m.status==='focus'||m.status==='break')?Math.max(0,Math.ceil((new Date(m.phase_ends_at).getTime()-Date.now())/1000)):0;
+  const progress=(m.status==='focus'||m.status==='break')?Math.max(0,Math.min(1,(total-remaining)/total)):0;
+  const c=2*Math.PI*48;circle.setAttribute('stroke-dashoffset',(c*(1-progress)).toFixed(2));
+ });
+}
 async function saveStudyPrefs(sessionId){
  const subject=document.getElementById('pomodoroSubject')?.value.trim(),focus=Number(document.getElementById('studyMyFocus')?.value),brk=Number(document.getElementById('studyMyBreak')?.value);
  if(!subject){studyFeedback('Choose a subject from the Pomodoro subject selector first.','error');document.getElementById('pomodoroSubject')?.focus();return;}
