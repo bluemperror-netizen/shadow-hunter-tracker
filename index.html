@@ -275,6 +275,11 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin:22px 0}
 
 /* Always show Finish Early on the local active timer, including during breaks */
 #studyTogetherLivePanel .study-live-actions #studyFinishEarly{display:inline-flex;align-items:center;justify-content:center;min-height:40px;background:rgba(127,29,29,.25);border:1px solid rgba(248,113,113,.6);color:#fecaca;font-weight:800}
+
+#studyTogetherLivePanel .study-live-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+#studyTogetherLivePanel .study-live-member{min-height:330px}
+#studyTogetherLivePanel .study-live-meta{justify-content:center}
+@media(max-width:650px){#studyTogetherLivePanel .study-live-grid{grid-template-columns:1fr}}
 </style>
 
 <style id="solo-inspired-theme">
@@ -1571,6 +1576,7 @@ function initGuildChatUI(){
 function subscribeGuildChat(){
  if(!cloudClient||!cloudUser)return;
  if(guildChatChannel){cloudClient.removeChannel(guildChatChannel);guildChatChannel=null;}
+   if(pomodoroMirrorChannel){cloudClient.removeChannel(pomodoroMirrorChannel);pomodoroMirrorChannel=null;}pomodoroMirrorFriends=[];
  const uid=cloudUser.id;
  guildChatChannel=cloudClient.channel('guild-chat-'+uid)
   .on('postgres_changes',{event:'INSERT',schema:'public',table:'accountability_messages'},payload=>{
@@ -1673,35 +1679,86 @@ async function loadStudyTogether(){
 }
 function studyStatusLabel(s){return ({waiting:'Waiting for friend',ready:'Ready',focus:'Focusing',break:'On break',finished:'Finished',offline:'Offline'})[s]||s||'Ready';}
 function studyCountdown(end,status){if(status!=='focus'&&status!=='break')return studyStatusLabel(status);const sec=Math.max(0,Math.ceil((new Date(end).getTime()-Date.now())/1000));return formatPomodoroTime(sec);}
+let pomodoroMirrorFriends=[];
+let pomodoroMirrorChannel=null;
+let pomodoroMirrorRefreshBusy=false;
+function pomodoroMirrorStatus(){
+ if(pomodoroInterval)return pomodoroMode==='focus'?'focus':'break';
+ if(pomodoroRemaining<=0)return 'finished';
+ if(pomodoroMode==='focus'&&pomodoroRemaining===(pomodoroDurations.focus||1500))return 'ready';
+ if((pomodoroMode==='short'||pomodoroMode==='long')&&pomodoroRemaining===(pomodoroDurations[pomodoroMode]||300))return 'ready';
+ return 'paused';
+}
+function pomodoroMirrorRemaining(){
+ return pomodoroInterval&&pomodoroEndAt?Math.max(0,Math.ceil((pomodoroEndAt-Date.now())/1000)):Math.max(0,pomodoroRemaining);
+}
+function renderPomodoroMirrorCard(name,subject,status,remaining,duration,isMe){
+ const label=({focus:'FOCUSING',break:'ON BREAK',paused:'PAUSED',ready:'READY',finished:'FINISHED',idle:'NOT STUDYING',offline:'OFFLINE'})[status]||'NOT STUDYING';
+ const active=status==='focus'||status==='break';
+ const progress=active?Math.max(0,Math.min(1,(duration-remaining)/Math.max(1,duration))):0;
+ const c=2*Math.PI*48;
+ const clock=(active||status==='paused')?formatPomodoroTime(remaining):'--:--';
+ return '<article class="study-live-member"><div class="study-live-status">'+label+'</div><h3>'+studyEscape(name)+'</h3><div class="study-arc-wrap"><svg class="study-progress-arc" viewBox="0 0 120 120" aria-hidden="true"><circle class="study-arc-track" cx="60" cy="60" r="48"></circle><circle class="study-arc-value" cx="60" cy="60" r="48" stroke-dasharray="'+c.toFixed(2)+'" stroke-dashoffset="'+(c*(1-progress)).toFixed(2)+'"></circle></svg><div class="study-arc-time" '+(isMe?'id="pomodoroMirrorMyClock"':'id="pomodoroMirrorFriendClock"')+'>'+clock+'</div></div><div class="study-live-meta"><span>Subject: '+studyEscape(subject||'Not selected')+'</span><span>'+ (status==='focus'?'Focus':status==='break'?'Break':'Timer')+': '+formatStudyDuration(duration)+'</span></div></article>';
+}
 function renderStudyLivePanel(){
  const host=document.getElementById('studyTogetherLiveContent');if(!host)return;
- if(!studyCurrentInviteRow){host.innerHTML='<div class="accountability-empty">Accept a Quick Invite from Accountability to see your friend here. Your Pomodoro subjects and study history stay in this section.</div>';return;}
- const uid=cloudUser?.id,me=studyCurrentMembers.find(x=>x.user_id===uid),friend=studyCurrentMembers.find(x=>x.user_id!==uid);
- const mySubject=document.getElementById('pomodoroSubject')?.value||me?.subject||'';
- const bothReady=studyCurrentMembers.length===2&&studyCurrentMembers.every(x=>x.status==='ready'&&x.subject);
- const started=!!studyCurrentInviteRow.session_started_at;
- const memberCard=(m,isMe)=>{
-  if(!m)return '<article class="study-live-member"><div class="study-live-status">WAITING</div><h3>Friend</h3><div class="study-live-clock">--:--</div><p>Waiting for friend to join this session.</p></article>';
-  const name=isMe?'You':(studyCurrentProfiles.get(m.user_id)||'Friend');
-  const activeTimer=m.status==='focus'||m.status==='break';
-  const settings=isMe?'<div class="study-live-settings"><label>Focus minutes<input id="studyMyFocus" type="number" min="1" max="180" value="'+Number(m.focus_minutes||25)+'" '+(activeTimer?'disabled':'')+'></label><label>Break minutes<input id="studyMyBreak" type="number" min="1" max="60" value="'+Number(m.break_minutes||5)+'" '+(activeTimer?'disabled':'')+'></label></div><div class="study-live-actions">'+(activeTimer?'': '<button type="button" id="studySavePrefs">Save my settings</button>')+(activeTimer?(m.status==='focus'?'<button type="button" id="studyStartMyBreak">Start my break</button>':'<button type="button" id="studyStartMyFocus" class="primary">Start my focus</button>')+'<button type="button" id="studyFinishEarly" class="danger">Finish Early</button>':'')+'</div>':'';
-
-  const totalSeconds=Math.max(1,(Number(m.status==='break'?m.break_minutes:m.focus_minutes)||25)*60);
-  const remainingSeconds=(m.status==='focus'||m.status==='break')?Math.max(0,Math.ceil((new Date(m.phase_ends_at).getTime()-Date.now())/1000)):0;
-  const progress=(m.status==='focus'||m.status==='break')?Math.max(0,Math.min(1,(totalSeconds-remainingSeconds)/totalSeconds)):0;
-  const circumference=2*Math.PI*48,offset=circumference*(1-progress);
-  const arc='<div class="study-arc-wrap"><svg class="study-progress-arc" viewBox="0 0 120 120" role="img" aria-label="Timer progress"><circle class="study-arc-track" cx="60" cy="60" r="48"></circle><circle class="study-arc-value" cx="60" cy="60" r="48" stroke-dasharray="'+circumference.toFixed(2)+'" stroke-dashoffset="'+offset.toFixed(2)+'"></circle></svg><div class="study-arc-time" data-study-clock="'+studyEscape(m.user_id)+'">'+studyCountdown(m.phase_ends_at,m.status)+'</div></div>';
-  return '<article class="study-live-member"><div class="study-live-status">'+studyEscape(studyStatusLabel(m.status))+'</div><h3>'+studyEscape(name)+'</h3>'+arc+'<div class="study-live-meta"><span>Subject: '+studyEscape(m.subject||'Not selected')+'</span><span>Focus: '+Number(m.focus_minutes||25)+' min</span><span>Break: '+Number(m.break_minutes||5)+' min</span></div>'+settings+'</article>';
- };
- host.innerHTML='<div class="study-live-grid">'+memberCard(me,true)+memberCard(friend,false)+'</div><div class="study-live-actions">'+(!started?'<button type="button" id="studyStartTogether" class="primary" '+(bothReady?'':'disabled')+'>Start together</button>':'<span class="tag">Shared start · '+new Date(studyCurrentInviteRow.session_started_at).toLocaleTimeString()+'</span>')+'</div><p class="history-note">Choose your subject in the Pomodoro subject selector above. Your friend chooses theirs on their own account. Save settings before the shared start.</p>';
-  const saveBtn=document.getElementById('studySavePrefs');if(saveBtn)saveBtn.onclick=()=>saveStudyPrefs(studyCurrentInvite);
-  const startTogether=document.getElementById('studyStartTogether');if(startTogether)startTogether.onclick=()=>startStudyTogether(studyCurrentInvite);
-  const startFocus=document.getElementById('studyStartMyFocus');if(startFocus)startFocus.onclick=()=>setStudyPhase(studyCurrentInvite,'focus');
-  const startBreak=document.getElementById('studyStartMyBreak');if(startBreak)startBreak.onclick=()=>setStudyPhase(studyCurrentInvite,'break');
-  const finish=document.getElementById('studyFinish');if(finish)finish.onclick=()=>setStudyPhase(studyCurrentInvite,'finished');
-  const finishEarly=document.getElementById('studyFinishEarly');if(finishEarly)finishEarly.onclick=()=>setStudyPhase(studyCurrentInvite,'finished');
-  updateStudyLiveClocks();
+ const myStatus=pomodoroMirrorStatus(),myDuration=(pomodoroDurations[pomodoroMode]||pomodoroDurations.focus),myRemaining=pomodoroMirrorRemaining();
+ const subject=document.getElementById('pomodoroSubject')?.value||'';
+ const friend=(pomodoroMirrorFriends||[]).filter(x=>x.user_id!==cloudUser?.id).sort((a,b)=>((b.status==='focus'||b.status==='break')?1:0)-((a.status==='focus'||a.status==='break')?1:0))[0];
+ let friendStatus=friend?.status||'idle';
+ if(friend&&Date.now()-new Date(friend.updated_at||0).getTime()>90000&&(friendStatus==='focus'||friendStatus==='break'||friendStatus==='paused'))friendStatus='offline';
+ const friendDuration=Number(friend?.duration_seconds)||1500;
+ const friendRemaining=(friendStatus==='focus'||friendStatus==='break')&&friend?.phase_ends_at?Math.max(0,Math.ceil((new Date(friend.phase_ends_at).getTime()-Date.now())/1000)):Number(friend?.remaining_seconds)||0;
+ host.innerHTML='<div class="study-live-grid">'+
+  renderPomodoroMirrorCard('You',subject,myStatus,myRemaining,myDuration,true)+
+  renderPomodoroMirrorCard(friend?.display_name||'Friend',friend?.subject||'',friendStatus,friendRemaining,friendDuration,false)+
+  '</div><p class="history-note">'+(friend?'Live view of your normal Pomodoro and your friend’s normal Pomodoro. Neither timer depends on a Quick Invite.':'Your normal Pomodoro appears here automatically. When a friend starts their Pomodoro, their live status appears on the right. Quick Invite is optional.')+'</p>';
 }
+
+async function publishPomodoroMirror(){
+ if(!cloudClient||!cloudUser||!cloudReady)return;
+ const subject=document.getElementById('pomodoroSubject')?.value||'';
+ const status=pomodoroMirrorStatus(),remaining=pomodoroMirrorRemaining(),duration=pomodoroDurations[pomodoroMode]||pomodoroDurations.focus;
+ const active=status==='focus'||status==='break';
+ const payload={user_id:cloudUser.id,subject,mode:pomodoroMode,status,remaining_seconds:remaining,duration_seconds:duration,phase_started_at:active?new Date(Date.now()-(duration-remaining)*1000).toISOString():null,phase_ends_at:active?new Date(Date.now()+remaining*1000).toISOString():null,updated_at:new Date().toISOString()};
+ const {error}=await cloudClient.from('pomodoro_live_presence').upsert(payload,{onConflict:'user_id'});
+ if(error)console.warn('Pomodoro live mirror sync failed:',error.message);
+ renderStudyLivePanel();
+}
+async function refreshPomodoroMirrorFriends(){
+ if(!cloudClient||!cloudUser||!cloudReady||pomodoroMirrorRefreshBusy)return;
+ pomodoroMirrorRefreshBusy=true;
+ try{
+  const uid=cloudUser.id;
+  const {data:links,error:linkError}=await cloudClient.from('friendships').select('user_a,user_b').or('user_a.eq.'+uid+',user_b.eq.'+uid);
+  if(linkError)throw linkError;
+  const ids=(links||[]).map(x=>x.user_a===uid?x.user_b:x.user_a);
+  if(!ids.length){pomodoroMirrorFriends=[];renderStudyLivePanel();return;}
+  const [{data:presence,error:pError},{data:profiles,error:profileError}]=await Promise.all([
+   cloudClient.from('pomodoro_live_presence').select('user_id,subject,mode,status,remaining_seconds,duration_seconds,phase_started_at,phase_ends_at,updated_at').in('user_id',ids),
+   cloudClient.from('hunter_profiles').select('user_id,display_name').in('user_id',ids)
+  ]);
+  if(pError)throw pError;if(profileError)throw profileError;
+  const names=new Map((profiles||[]).map(x=>[x.user_id,x.display_name||'Friend']));
+  pomodoroMirrorFriends=(presence||[]).map(x=>({...x,display_name:names.get(x.user_id)||'Friend'}));
+  renderStudyLivePanel();
+ }catch(e){console.warn('Could not refresh friend Pomodoro presence:',e.message);}
+ finally{pomodoroMirrorRefreshBusy=false;}
+}
+function subscribePomodoroMirror(){
+ if(!cloudClient||!cloudUser)return;
+ if(pomodoroMirrorChannel)cloudClient.removeChannel(pomodoroMirrorChannel);
+ const uid=cloudUser.id;
+ pomodoroMirrorChannel=cloudClient.channel('pomodoro-live-'+uid)
+  .on('postgres_changes',{event:'*',schema:'public',table:'pomodoro_live_presence'},()=>{if(cloudUser?.id===uid&&cloudReady)refreshPomodoroMirrorFriends();})
+  .subscribe();
+ refreshPomodoroMirrorFriends();
+ publishPomodoroMirror();
+}
+setInterval(()=>{
+ if(!document.getElementById('studyTogetherLiveContent'))return;
+ renderStudyLivePanel();
+},1000);
 function updateStudyLiveClocks(){
  document.querySelectorAll('[data-study-clock]').forEach(el=>{
   const m=studyCurrentMembers.find(x=>x.user_id===el.dataset.studyClock);if(!m)return;
@@ -1847,6 +1904,7 @@ async function syncFromCloud(user){
  subscribeGuildChat();
  initAccountabilityUI();
  subscribeStudyTogether();
+ subscribePomodoroMirror();
  await loadStudyTogether();
  if(accountabilityChannel){await cloudClient.removeChannel(accountabilityChannel);accountabilityChannel=null;}
  accountabilityChannel=cloudClient.channel('accountability-'+user.id)
@@ -2452,6 +2510,7 @@ function setPomodoroMode(mode){
  document.getElementById('pomodoroFinishEarly').hidden=false;
  document.getElementById('pomodoroStatus').textContent=mode==='focus'?'Select a subject to begin studying.':(mode==='short'?'Time for a short break.':'Take a longer break.');
  updatePomodoroDisplay();
+ publishPomodoroMirror();
 }
 function syncPomodoroToStudyHabit(subject,elapsedSeconds){
  const minutes=Math.max(0,Number(elapsedSeconds)/60);
@@ -2481,6 +2540,7 @@ function tickPomodoro(){
    alert('Pomodoro complete! Great work on '+subject+'.');
   }else document.getElementById('pomodoroStatus').textContent='Break complete. Ready for another focus session?';
   document.getElementById('pomodoroStart').textContent='Start';
+  publishPomodoroMirror();
  }
 }
 function addPomodoroSubject(){
@@ -2505,19 +2565,20 @@ document.getElementById('newStudySubject').addEventListener('keydown',e=>{
 });
 document.querySelectorAll('.pomodoro-mode').forEach(b=>b.addEventListener('click',()=>setPomodoroMode(b.dataset.mode)));
 document.getElementById('pomodoroStart').addEventListener('click',()=>{
- if(pomodoroInterval){stopPomodoro();document.getElementById('pomodoroStart').textContent='Resume';document.getElementById('pomodoroStatus').textContent='Timer paused.';return;}
+ if(pomodoroInterval){pomodoroRemaining=Math.max(0,Math.ceil((pomodoroEndAt-Date.now())/1000));stopPomodoro();document.getElementById('pomodoroStart').textContent='Resume';document.getElementById('pomodoroStatus').textContent='Timer paused.';publishPomodoroMirror();return;}
  if(pomodoroMode==='focus'&&!document.getElementById('pomodoroSubject').value){document.getElementById('pomodoroStatus').textContent='Add and select a subject before starting.';return;}
  pomodoroEndAt=Date.now()+pomodoroRemaining*1000;
  pomodoroInterval=setInterval(tickPomodoro,250);
  document.getElementById('pomodoroStart').textContent='Pause';
  document.getElementById('pomodoroStatus').textContent=pomodoroMode==='focus'?'Focus session in progress.':'Break in progress.';
+ publishPomodoroMirror();
 });
 document.getElementById('pomodoroFinishEarly').addEventListener('click',()=>{
  if(pomodoroMode!=='focus'){
   stopPomodoro();
   setPomodoroMode('focus');
   document.getElementById('pomodoroStatus').textContent='Break ended early. Ready for your next focus session.';
-  return;
+  publishPomodoroMirror();return;
  }
  const subject=document.getElementById('pomodoroSubject').value;
  if(!subject){document.getElementById('pomodoroStatus').textContent='Select a subject before finishing the session.';return;}
@@ -2530,6 +2591,7 @@ document.getElementById('pomodoroFinishEarly').addEventListener('click',()=>{
  save();renderPomodoroHistory();
  document.getElementById('pomodoroStatus').textContent=linkedHabit?'Session saved. '+linkedHabit+' habit updated with actual study time.':'Session saved. Add a measurable Study habit (minutes or hours) to sync progress.';
  document.getElementById('pomodoroStart').textContent='Start';
+ publishPomodoroMirror();
 });
 document.getElementById('pomodoroReset').addEventListener('click',()=>setPomodoroMode(pomodoroMode));
 
@@ -2568,7 +2630,7 @@ function updatePomodoroFullscreenSubject(){
  const selected=select&&select.selectedOptions&&select.selectedOptions[0];
  title.textContent=selected&&select.value?selected.textContent:'No subject selected';
 }
-document.getElementById('pomodoroSubject').addEventListener('change',()=>{updatePomodoroFullscreenSubject();renderStudyLivePanel();});
+document.getElementById('pomodoroSubject').addEventListener('change',()=>{updatePomodoroFullscreenSubject();renderStudyLivePanel();publishPomodoroMirror();});
 async function togglePomodoroFullscreen(){
  updatePomodoroFullscreenSubject();
  const card=document.getElementById('pomodoroTimerCard');
