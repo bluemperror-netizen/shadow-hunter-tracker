@@ -1899,6 +1899,7 @@ async function syncFromCloud(user){
  if(syncToken!==authSyncToken||!cloudUser||cloudUser.id!==user.id)return;
  cloudReady=true;
  renderPomodoroSubjects();
+ setPomodoroSubjectLock(false);
  renderPomodoroHistory();
  initAccountabilityUI();
  await loadAccountabilityFriends();
@@ -2474,6 +2475,16 @@ document.getElementById('goalStart').value=todayKey();
 // Pomodoro: subjects are user-created; no placeholder/dummy subjects are seeded.
 const pomodoroDurations={focus:25*60,short:5*60,long:15*60};
 let pomodoroMode='focus',pomodoroRemaining=pomodoroDurations.focus,pomodoroInterval=null,pomodoroEndAt=null;
+let pomodoroSubjectLocked=false;
+function setPomodoroSubjectLock(locked){
+ pomodoroSubjectLocked=!!locked;
+ const select=document.getElementById('pomodoroSubject');
+ const input=document.getElementById('newStudySubject');
+ const add=document.getElementById('addStudySubjectBtn');
+ [select,input,add].forEach(el=>{if(el){el.disabled=pomodoroSubjectLocked;el.setAttribute('aria-disabled',String(pomodoroSubjectLocked));}});
+ if(input)input.placeholder=pomodoroSubjectLocked?'Subject locked until this focus session ends':'e.g. Mathematics';
+}
+
 function pomodoroSubjects(){data.studySubjects=Array.isArray(data.studySubjects)?data.studySubjects:[];return data.studySubjects;}
 function renderPomodoroSubjects(){
  const select=document.getElementById('pomodoroSubject'),chosen=select.value;
@@ -2506,7 +2517,7 @@ function updatePomodoroDisplay(){
 }
 function stopPomodoro(){if(pomodoroInterval){clearInterval(pomodoroInterval);pomodoroInterval=null;}pomodoroEndAt=null;}
 function setPomodoroMode(mode){
- stopPomodoro();pomodoroMode=mode;pomodoroRemaining=pomodoroDurations[mode];
+ stopPomodoro();setPomodoroSubjectLock(false);pomodoroMode=mode;pomodoroRemaining=pomodoroDurations[mode];
  document.querySelectorAll('.pomodoro-mode').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
  document.getElementById('pomodoroStart').textContent='Start';
  document.getElementById('pomodoroFinishEarly').hidden=false;
@@ -2542,10 +2553,12 @@ function tickPomodoro(){
    alert('Pomodoro complete! Great work on '+subject+'.');
   }else document.getElementById('pomodoroStatus').textContent='Break complete. Ready for another focus session?';
   document.getElementById('pomodoroStart').textContent='Start';
+  if(pomodoroMode==='focus')setPomodoroSubjectLock(false);
   publishPomodoroMirror();
  }
 }
 function addPomodoroSubject(){
+ if(pomodoroSubjectLocked){document.getElementById('pomodoroStatus').textContent='You cannot change or add subjects during a running focus session. Finish or reset it first.';return;}
  const input=document.getElementById('newStudySubject');
  const subject=input.value.trim();
  if(!subject){document.getElementById('pomodoroStatus').textContent='Type a subject name first.';input.focus();return;}
@@ -2572,6 +2585,7 @@ document.querySelectorAll('.pomodoro-mode').forEach(b=>b.addEventListener('click
 document.getElementById('pomodoroStart').addEventListener('click',()=>{
  if(pomodoroInterval){pomodoroRemaining=Math.max(0,Math.ceil((pomodoroEndAt-Date.now())/1000));stopPomodoro();document.getElementById('pomodoroStart').textContent='Resume';document.getElementById('pomodoroStatus').textContent='Timer paused.';publishPomodoroMirror();return;}
  if(pomodoroMode==='focus'&&!document.getElementById('pomodoroSubject').value){document.getElementById('pomodoroStatus').textContent='Add and select a subject before starting.';return;}
+ if(pomodoroMode==='focus')setPomodoroSubjectLock(true);
  pomodoroEndAt=Date.now()+pomodoroRemaining*1000;
  pomodoroInterval=setInterval(tickPomodoro,250);
  document.getElementById('pomodoroStart').textContent='Pause';
@@ -2596,6 +2610,7 @@ document.getElementById('pomodoroFinishEarly').addEventListener('click',()=>{
  save();renderPomodoroHistory();
  document.getElementById('pomodoroStatus').textContent=linkedHabit?'Session saved. '+linkedHabit+' habit updated with actual study time.':'Session saved. Add a measurable Study habit (minutes or hours) to sync progress.';
  document.getElementById('pomodoroStart').textContent='Start';
+ setPomodoroSubjectLock(false);
  publishPomodoroMirror();
 });
 document.getElementById('pomodoroReset').addEventListener('click',()=>setPomodoroMode(pomodoroMode));
@@ -2635,7 +2650,10 @@ function updatePomodoroFullscreenSubject(){
  const selected=select&&select.selectedOptions&&select.selectedOptions[0];
  title.textContent=selected&&select.value?selected.textContent:'No subject selected';
 }
-document.getElementById('pomodoroSubject').addEventListener('change',()=>{updatePomodoroFullscreenSubject();renderStudyLivePanel();publishPomodoroMirror();});
+document.getElementById('pomodoroSubject').addEventListener('change',e=>{
+ if(pomodoroSubjectLocked){renderPomodoroSubjects();document.getElementById('pomodoroStatus').textContent='Subject is locked until this focus session ends.';return;}
+ updatePomodoroFullscreenSubject();renderStudyLivePanel();publishPomodoroMirror();
+});
 async function togglePomodoroFullscreen(){
  updatePomodoroFullscreenSubject();
  const card=document.getElementById('pomodoroTimerCard');
