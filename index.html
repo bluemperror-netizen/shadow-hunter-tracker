@@ -387,6 +387,26 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin:22px 0}
 .habit-progress-amount-input{-moz-appearance:textfield;appearance:textfield}
 .habit-progress-amount-input::-webkit-inner-spin-button,
 .habit-progress-amount-input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+
+.profile-avatar-btn{position:relative;overflow:hidden;border-radius:50%;padding:0!important}
+.profile-avatar-btn>span{position:absolute;inset:0;display:grid;place-items:center;z-index:1}
+.profile-avatar-btn>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;border-radius:50%;z-index:2}
+.profile-avatar-btn>img[hidden],.profile-avatar-btn>span[hidden]{display:none!important}
+.profile-picture-preview{position:relative;overflow:hidden;border-radius:50%}
+.profile-picture-preview>span{position:absolute;inset:0;display:grid;place-items:center;z-index:1}
+.profile-picture-preview>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;border-radius:50%;z-index:2}
+.profile-picture-preview>img[hidden],.profile-picture-preview>span[hidden]{display:none!important}
+.profile-name-card{margin-bottom:14px}
+.profile-name-controls{display:grid;gap:8px;width:100%}
+.profile-name-row{display:flex;gap:8px;max-width:560px}
+.profile-name-row input{flex:1;min-width:0}
+@media(max-width:520px){.profile-name-row{flex-direction:column}.profile-name-row button{width:100%}}
+
+.study-stats-grid{grid-template-columns:repeat(3,minmax(0,1fr));margin:12px 0 22px}
+.study-stats-grid>div{min-width:0}
+#statsStudyDaily{min-height:150px;align-items:end}
+#statsStudyBySubject{display:grid;gap:12px;margin-top:10px}
+@media(max-width:520px){.study-stats-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.study-stats-grid .metric{font-size:20px}}
 </style>
 
 <style id="solo-inspired-theme">
@@ -1148,6 +1168,13 @@ body.pomodoro-fallback-active{overflow:hidden!important}
       <div><div class="panel-kicker">PLAYER PROFILE</div><h2>HUNTER PROFILE</h2><p class="history-note">Detailed rank, level, XP progression and achievement milestones.</p></div>
       <button type="button" id="profileSignOutBtn" class="profile-signout-btn">Log out</button>
     </div>
+    <section class="card profile-name-card">
+      <div class="profile-name-controls">
+        <strong>Hunter name</strong>
+        <span class="history-note">This name appears in your welcome message and friend profile.</span>
+        <div class="profile-name-row"><input id="profileDisplayNameInput" type="text" maxlength="32" placeholder="Enter your hunter name" autocomplete="nickname"><button type="button" id="saveProfileNameBtn">Save name</button></div>
+      </div>
+    </section>
     <section class="card profile-picture-card">
       <div class="profile-picture-preview" id="profilePicturePreview"><span id="profilePictureInitial">H</span><img id="profilePictureLarge" alt="Hunter profile picture" hidden></div>
       <div class="profile-picture-controls">
@@ -1198,6 +1225,18 @@ body.pomodoro-fallback-active{overflow:hidden!important}
     <article class="card stats-panel">
       <div class="section-head"><h2>Habit performance</h2><span class="tag">Selected period</span></div>
       <div id="statsHabitRows" class="stats-habits"></div>
+    </article>
+    <article class="card stats-panel">
+      <div class="section-head"><h2>Study progress</h2><span class="tag">Selected period</span></div>
+      <div class="stats-grid study-stats-grid">
+        <div><div class="metric-label">Focus time</div><div class="metric" id="statsStudyTime">0m</div></div>
+        <div><div class="metric-label">Sessions</div><div class="metric" id="statsStudySessions">0</div></div>
+        <div><div class="metric-label">Subjects</div><div class="metric" id="statsStudySubjects">0</div></div>
+      </div>
+      <div class="section-head"><h3>Daily study time</h3></div>
+      <div id="statsStudyDaily" class="stats-bars"></div>
+      <div class="section-head"><h3>Focus time by subject</h3></div>
+      <div id="statsStudyBySubject" class="pomo-subject-chart"></div>
     </article>
     <article class="card stats-panel">
       <div class="section-head"><h2>XP activity</h2><span class="tag">Selected period</span></div>
@@ -1458,11 +1497,12 @@ function setAuthStatus(message,kind=''){
  el.textContent=message;el.className='auth-state'+(kind?' '+kind:'');
 }
 function hunterDisplayName(user){
+ const custom=String(data.profileName||'').trim();
+ if(custom)return custom;
  const meta=user?.user_metadata||{};
- const candidate=meta.full_name||meta.name||meta.display_name||meta.username;
+ const candidate=meta.display_name||meta.full_name||meta.name||meta.username;
  if(candidate&&String(candidate).trim())return String(candidate).trim();
- const email=user?.email||'Hunter';
- return email.split('@')[0].replace(/[._-]+/g,' ').replace(/\\b\\w/g,c=>c.toUpperCase())||'Hunter';
+ return 'Hunter';
 }
 function renderProfilePicture(){
  const picture=data.profilePicture||'';
@@ -1472,10 +1512,12 @@ function renderProfilePicture(){
  const largeInitials=document.getElementById('profilePictureInitial');
  const name=hunterDisplayName(cloudUser);
  const initial=(name.trim()[0]||'H').toUpperCase();
- if(initials)initials.textContent=initial;
- if(largeInitials)largeInitials.textContent=initial;
+ if(initials){initials.textContent=initial;initials.hidden=!!picture;}
+ if(largeInitials){largeInitials.textContent=initial;largeInitials.hidden=!!picture;}
  if(small){small.hidden=!picture;if(picture)small.src=picture;}
  if(large){large.hidden=!picture;if(picture)large.src=picture;}
+ const nameInput=document.getElementById('profileDisplayNameInput');
+ if(nameInput&&document.activeElement!==nameInput)nameInput.value=String(data.profileName||cloudUser?.user_metadata?.display_name||cloudUser?.user_metadata?.full_name||'');
 }
 function setSignedInUI(user){
  const signed=!!user;
@@ -1902,7 +1944,7 @@ async function recordStudyTogetherFocus(sessionId,mine,endedAt){
  if(!logged||!logged.length)return;
  const item={id,subject:mine.subject,completedAt:new Date(endedAt).toISOString(),minutes:Math.round(seconds/60*10)/10,seconds,source:'study-together'};
  data.studySessions.push(item);
- const linkedHabit=syncPomodoroToStudyHabit(mine.subject,seconds);
+ const linkedHabit=syncPomodoroToStudyHabit(mine.subject,seconds,item.completedAt,item.id);
  save();renderPomodoroHistory();renderPomodoroStats();
  studyFeedback('Saved '+formatStudyDuration(seconds)+' for '+mine.subject+(linkedHabit?' · '+linkedHabit+' habit updated.':'. Add a measurable Study habit in minutes or hours to sync habit progress.'),'ok');
 }
@@ -2090,6 +2132,19 @@ document.getElementById('profileAvatarBtn').addEventListener('click',()=>{
  document.querySelectorAll('.page-tab').forEach(x=>x.classList.remove('active'));
 });
 document.getElementById('profileSignOutBtn').addEventListener('click',()=>document.getElementById('signOutBtn').click());
+document.getElementById('saveProfileNameBtn').addEventListener('click',async()=>{
+ const input=document.getElementById('profileDisplayNameInput');
+ const name=String(input.value||'').trim();
+ if(!name){showToast('Enter a hunter name first.');input.focus();return;}
+ if(name.length>32){showToast('Hunter name must be 32 characters or fewer.');return;}
+ data.profileName=name;save();
+ if(cloudClient&&cloudUser){
+  const {data:updated,error}=await cloudClient.auth.updateUser({data:{display_name:name}});
+  if(error){showToast('Name saved on this device, but cloud profile update failed: '+error.message);renderProfilePicture();return;}
+  if(updated?.user)cloudUser=updated.user;
+ }
+ renderProfilePicture();setSignedInUI(cloudUser);showToast('Hunter name updated.');
+});
 document.getElementById('profilePictureInput').addEventListener('change',async e=>{
  const file=e.target.files&&e.target.files[0];if(!file)return;
  if(!file.type.startsWith('image/')){showToast('Choose an image file.');e.target.value='';return;}
@@ -2238,6 +2293,30 @@ function reverseXPEvent(eventKey){
  delete data.xpEvents[eventKey];
  return true;
 }
+function syncStudyHabitCompletionToPomodoro(key,h,isCompleted){
+ if(!/\b(study|learn|course|revision|coding|practice|german)\b/i.test(h.name||''))return;
+ const tracker=trackerFor(h),unit=String(tracker.unit||'').toLowerCase();
+ let seconds=0;
+ if(['min','mins','minute','minutes'].includes(unit))seconds=Number(tracker.target)*60;
+ else if(['h','hr','hrs','hour','hours'].includes(unit))seconds=Number(tracker.target)*3600;
+ else return; // No duration is guessed for non-time-based habits.
+ data.studySessions=Array.isArray(data.studySessions)?data.studySessions:[];
+ data.studyHabitSync=data.studyHabitSync||{};
+ const id='habit-completion:'+key+':'+h.id;
+ if(isCompleted){
+  if(data.studySessions.some(x=>x.id===id))return;
+  const completedAt=new Date(key+'T12:00:00').toISOString();
+  data.studySessions.push({id,subject:'Other',habitName:h.name,completedAt,minutes:seconds/60,seconds,source:'habit-completion'});
+  // This log is the reverse mirror of the completed habit; do not count it
+  // again when importing Pomodoro history into habit progress.
+  data.studyHabitSync[id]={habitId:h.id,date:key,seconds,source:'habit-completion'};
+ }else{
+  data.studySessions=data.studySessions.filter(x=>x.id!==id);
+  delete data.studyHabitSync[id];
+ }
+ if(typeof renderPomodoroHistory==='function'&&document.getElementById('pomodoroHistory'))renderPomodoroHistory();
+ if(typeof renderStatistics==='function'&&document.getElementById('statsStudyTime'))renderStatistics();
+}
 function evaluateCompletionRewards(key){
  const finished=completed(key);
  const levelBefore=levelInfo().level;
@@ -2245,6 +2324,7 @@ function evaluateCompletionRewards(key){
  for(const h of data.habits){
   const eventKey='habit:'+key+':'+h.id;
   if(finished.includes(h.id)){
+   syncStudyHabitCompletionToPomodoro(key,h,true);
    if(!data.xpEvents[eventKey]){
     const before=Number(data.xp||0);
     data.xpEvents[eventKey]={amount:10,reason:'Habit completed',at:new Date().toISOString()};
@@ -2253,9 +2333,12 @@ function evaluateCompletionRewards(key){
     showToast('+10 XP · Habit completed');
     if(key===todayKey())playHunterSfx('habit');
    }
-  }else if(reverseXPEvent(eventKey)){
+  }else{
+   syncStudyHabitCompletionToPomodoro(key,h,false);
+   if(reverseXPEvent(eventKey)){
    rewardsChanged=true;
    showToast('−10 XP · Habit unchecked');
+   }
   }
  }
  const dailyEventKey='daily:'+key;
@@ -2292,6 +2375,7 @@ function evaluateCompletionRewards(key){
 }
 
 function render(){
+ if(backfillStudySessionsToHabit())save();
  const today=todayKey(), checks=completed(today), done=data.habits.filter(h=>checks.includes(h.id)).length, total=data.habits.length, p=total?Math.round(done/total*100):0;
  renderHunter();
  document.getElementById('todayLabel').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',year:'numeric',month:'long',day:'numeric'});
@@ -2511,6 +2595,30 @@ document.getElementById('editHabitButton').addEventListener('click',()=>{
 
 let statsDays=7;
 function statsDateKey(date){return date.toLocaleDateString('en-CA');}
+function renderStudyStatistics(){
+ const sessions=Array.isArray(data.studySessions)?data.studySessions:[];
+ const start=new Date();start.setHours(0,0,0,0);start.setDate(start.getDate()-(statsDays-1));
+ const end=new Date();end.setHours(23,59,59,999);
+ const inPeriod=sessions.filter(x=>{const d=new Date(x.completedAt);return Number.isFinite(d.getTime())&&d>=start&&d<=end;});
+ const secondsOf=x=>Math.max(0,Number(x.seconds)||Number(x.minutes||0)*60);
+ const total=inPeriod.reduce((sum,x)=>sum+secondsOf(x),0),bySubject={};
+ inPeriod.forEach(x=>{const name=String(x.subject||'Unspecified');bySubject[name]=(bySubject[name]||0)+secondsOf(x);});
+ document.getElementById('statsStudyTime').textContent=formatStudyDuration(total);
+ document.getElementById('statsStudySessions').textContent=inPeriod.length;
+ document.getElementById('statsStudySubjects').textContent=Object.keys(bySubject).length;
+ const days=[];
+ for(let i=statsDays-1;i>=0;i--){
+  const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()-i);
+  const key=statsDateKey(d);
+  const seconds=inPeriod.filter(x=>statsDateKey(new Date(x.completedAt))===key).reduce((sum,x)=>sum+secondsOf(x),0);
+  days.push({label:d.toLocaleDateString(undefined,{weekday:'short'}),seconds});
+ }
+ const max=Math.max(1,...days.map(x=>x.seconds));
+ document.getElementById('statsStudyDaily').innerHTML=days.map(x=>'<div class="stats-bar-col"><span class="stats-bar-value">'+formatStudyDuration(x.seconds)+'</span><div class="stats-bar-track"><div class="stats-bar-fill" style="height:'+Math.max(0,x.seconds/max*100)+'%"></div></div><span class="stats-bar-day">'+x.label+'</span></div>').join('');
+ const entries=Object.entries(bySubject).sort((a,b)=>b[1]-a[1]);
+ const host=document.getElementById('statsStudyBySubject');
+ host.innerHTML=entries.length?entries.map(([name,seconds])=>'<div class="pomo-chart-row"><span class="pomo-chart-label">'+statsEscape(name)+'</span><div class="pomo-chart-track"><div class="pomo-chart-fill" style="width:'+Math.max(1,seconds/Math.max(1,entries[0][1])*100)+'%"></div></div><span class="pomo-chart-value">'+formatStudyDuration(seconds)+'</span></div>').join(''):'<div class="stats-empty">No study sessions in this period yet.</div>';
+}
 function renderStatistics(){
  const days=[];
  for(let i=statsDays-1;i>=0;i--){const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()-i);days.push({key:statsDateKey(d),date:d,value:pct(statsDateKey(d))});}
@@ -2529,6 +2637,7 @@ function renderStatistics(){
  document.getElementById('statsBars').innerHTML=days.map(x=>'<div class="stats-bar-col"><span class="stats-bar-value">'+x.value+'%</span><div class="stats-bar-track"><div class="stats-bar-fill" style="height:'+x.value+'%"></div></div><span class="stats-bar-day">'+x.date.toLocaleDateString(undefined,{weekday:'short',day:statsDays===7?'numeric':undefined})+'</span></div>').join('');
  document.getElementById('statsHabitRows').innerHTML=data.habits.length?data.habits.map(h=>{const n=days.filter(x=>completed(x.key).includes(h.id)).length,rate=Math.round(n/statsDays*100);return '<div class="stats-habit"><span class="stats-habit-name">'+statsEscape(h.name)+'</span><div class="stats-habit-track"><div class="stats-habit-fill" style="width:'+rate+'%"></div></div><span class="stats-habit-count">'+n+'/'+statsDays+' days · '+rate+'%</span></div>';}).join(''):'<div class="stats-empty">Add habits to see performance.</div>';
  document.getElementById('statsXpEvents').innerHTML=events.length?events.slice(0,15).map(e=>'<div class="stats-event"><span>'+statsEscape(e.reason||'XP earned')+' <small>· '+e.date.toLocaleDateString()+'</small></span><strong>+'+(Number(e.amount)||0)+' XP</strong></div>').join(''):'<div class="stats-empty">No XP events recorded in this period.</div>';
+ renderStudyStatistics();
 }
 function statsEscape(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
@@ -2637,19 +2746,47 @@ function setPomodoroMode(mode){
  updatePomodoroDisplay();
  publishPomodoroMirror();
 }
-function syncPomodoroToStudyHabit(subject,elapsedSeconds){
- const minutes=Math.max(0,Number(elapsedSeconds)/60);
- if(minutes<=0)return null;
- const studyHabit=data.habits.find(h=>/\b(study|learn|course|revision|coding|practice|german)\b/i.test(h.name));
+function syncPomodoroToStudyHabit(subject,elapsedSeconds,completedAt=new Date().toISOString(),sessionId=null){
+ const seconds=Math.max(0,Number(elapsedSeconds)||0);
+ if(seconds<=0)return null;
+ const studyHabit=data.habits.find(h=>{
+  if(!/\b(study|learn|course|revision|coding|practice|german)\b/i.test(h.name))return false;
+  const unit=String(trackerFor(h).unit||'').toLowerCase();
+  return ['min','mins','minute','minutes','h','hr','hrs','hour','hours'].includes(unit);
+ });
  if(!studyHabit)return null;
+ data.studyHabitSync=data.studyHabitSync||{};
+ const id=sessionId||('session:'+String(subject||'study')+':'+String(completedAt)+':'+seconds);
+ if(data.studyHabitSync[id])return studyHabit.name;
  const tracker=trackerFor(studyHabit),unit=String(tracker.unit||'').toLowerCase();
- let increment;
- if(['min','mins','minute','minutes'].includes(unit))increment=minutes;
- else if(['h','hr','hrs','hour','hours'].includes(unit))increment=minutes/60;
- else return null;
- const before=habitAmountToday(studyHabit);
- setHabitAmount(studyHabit,before+increment);
+ const increment=['h','hr','hrs','hour','hours'].includes(unit)?seconds/3600:seconds/60;
+ const date=new Date(completedAt);
+ const key=Number.isFinite(date.getTime())?date.toLocaleDateString('en-CA'):todayKey();
+ data.habitProgress=data.habitProgress||{};
+ data.habitProgress[key]=data.habitProgress[key]||{};
+ const before=Number(data.habitProgress[key][studyHabit.id]||0);
+ const target=Number(tracker.target)||1;
+ data.habitProgress[key][studyHabit.id]=Math.min(target,before+increment);
+ if(data.habitProgress[key][studyHabit.id]>=target){
+  const done=data.days[key]||[];
+  if(!done.includes(studyHabit.id))data.days[key]=[...done,studyHabit.id];
+  if(key===todayKey())evaluateCompletionRewards(key);
+ }
+ data.studyHabitSync[id]={habitId:studyHabit.id,date:key,seconds};
  return studyHabit.name;
+}
+function backfillStudySessionsToHabit(){
+ if(!Array.isArray(data.studySessions)||!data.studySessions.length)return false;
+ data.studyHabitSync=data.studyHabitSync||{};
+ const before=Object.keys(data.studyHabitSync).length;
+ data.studySessions.forEach((session,index)=>{
+  const seconds=Math.max(0,Number(session.seconds)||Number(session.minutes||0)*60);
+  if(seconds<1)return;
+  const completedAt=session.completedAt||new Date().toISOString();
+  const id=session.id||('legacy:'+index+':'+completedAt+':'+String(session.subject||'')+':'+seconds);
+  syncPomodoroToStudyHabit(session.subject,seconds,completedAt,id);
+ });
+ return Object.keys(data.studyHabitSync).length!==before;
 }
 function tickPomodoro(){
  pomodoroRemaining=Math.max(0,Math.ceil((pomodoroEndAt-Date.now())/1000));updatePomodoroDisplay();
@@ -2658,8 +2795,9 @@ function tickPomodoro(){
   if(pomodoroMode==='focus'){
    const subject=document.getElementById('pomodoroSubject').value;
    data.studySessions=Array.isArray(data.studySessions)?data.studySessions:[];
-   data.studySessions.push({subject,completedAt:new Date().toISOString(),minutes:25,seconds:1500});
-   const linkedHabit=syncPomodoroToStudyHabit(subject,1500);
+   const session={id:newId(),subject,completedAt:new Date().toISOString(),minutes:25,seconds:1500};
+   data.studySessions.push(session);
+   const linkedHabit=syncPomodoroToStudyHabit(subject,1500,session.completedAt,session.id);
    save();renderPomodoroHistory();
    document.getElementById('pomodoroStatus').textContent=linkedHabit?'Focus session complete. '+linkedHabit+' habit updated. Take a break.':'Focus session complete. Add a measurable Study habit (minutes or hours) to sync progress.';
    alert('Pomodoro complete! Great work on '+subject+'.');
@@ -2717,8 +2855,9 @@ document.getElementById('pomodoroFinishEarly').addEventListener('click',()=>{
  if(elapsedSeconds<1){document.getElementById('pomodoroStatus').textContent='Start studying before finishing the session.';return;}
  stopPomodoro();
  data.studySessions=Array.isArray(data.studySessions)?data.studySessions:[];
- data.studySessions.push({subject,completedAt:new Date().toISOString(),minutes:Math.round(elapsedSeconds/60*10)/10,seconds:elapsedSeconds,finishedEarly:true});
- const linkedHabit=syncPomodoroToStudyHabit(subject,elapsedSeconds);
+ const session={id:newId(),subject,completedAt:new Date().toISOString(),minutes:Math.round(elapsedSeconds/60*10)/10,seconds:elapsedSeconds,finishedEarly:true};
+ data.studySessions.push(session);
+ const linkedHabit=syncPomodoroToStudyHabit(subject,elapsedSeconds,session.completedAt,session.id);
  save();renderPomodoroHistory();
  document.getElementById('pomodoroStatus').textContent=linkedHabit?'Session saved. '+linkedHabit+' habit updated with actual study time.':'Session saved. Add a measurable Study habit (minutes or hours) to sync progress.';
  document.getElementById('pomodoroStart').textContent='Start';
