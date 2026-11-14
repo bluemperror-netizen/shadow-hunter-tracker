@@ -366,6 +366,27 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin:22px 0}
  main{overflow-x:clip}
  .shadow-swipe-enter-right,.shadow-swipe-enter-left{animation-duration:.38s}
 }
+
+/* Icon-only primary navigation */
+.page-nav-icons{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));width:100%;box-sizing:border-box;gap:8px}
+.page-nav-icons .page-tab{display:grid;place-items:center;grid-column:auto!important;min-width:0;min-height:44px;padding:8px;font-size:22px;line-height:1}
+.page-nav-icons .page-tab span{display:block;transition:transform .2s ease}
+.page-nav-icons .page-tab:hover span{transform:translateY(-2px) scale(1.08)}
+.page-nav-icons .page-tab.active span{filter:drop-shadow(0 0 5px #a78bfa88)}
+@media(max-width:620px){
+ .page-nav-icons{gap:5px;padding:4px}
+ .page-nav-icons .page-tab{min-height:42px;padding:7px;font-size:21px}
+}
+
+/* Progress bars show progress only; the habit name stays in the row label. */
+.habit-progress-info{min-width:0}
+.habit-progress-track{margin-top:0!important}
+.habit-progress-label{display:none!important}
+
+/* Hide browser-native number steppers in the Dashboard progress amount field. */
+.habit-progress-amount-input{-moz-appearance:textfield;appearance:textfield}
+.habit-progress-amount-input::-webkit-inner-spin-button,
+.habit-progress-amount-input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 </style>
 
 <style id="solo-inspired-theme">
@@ -565,11 +586,11 @@ function escapeHtml(value){
 
 
 <style id="inline-habit-progress-style">
-.habit{display:grid;grid-template-columns:20px 26px minmax(125px,.8fr) minmax(260px,1.6fr) 24px;align-items:center;column-gap:10px;row-gap:0;padding:13px 14px;min-width:0}
+.habit{display:grid;grid-template-columns:20px 26px minmax(125px,.8fr) minmax(260px,1.6fr);align-items:center;column-gap:10px;row-gap:0;padding:13px 14px;min-width:0}
 .habit input[type=checkbox]{grid-column:1;grid-row:1;width:19px;height:19px;margin:0;justify-self:center}
 .habit-emoji{grid-column:2;grid-row:1;width:26px;height:26px;display:grid;place-items:center;font-size:19px;line-height:1;filter:drop-shadow(0 0 7px #a78bfa33)}
 .habit-name{grid-column:3;grid-row:1;min-width:0;overflow-wrap:anywhere;font-size:14px}
-.habit>.delete{grid-column:5;grid-row:1;justify-self:end}
+
 .habit-progress{grid-column:4;grid-row:1;width:100%;min-width:0;margin:0;padding:9px 10px;border:1px solid #373653;border-radius:8px;background:rgba(9,13,28,.45);display:grid;grid-template-columns:minmax(90px,1fr) auto auto;gap:10px;align-items:center}
 .habit-progress-info{min-width:0}
 .habit-progress-label{font-size:10px;color:#d8d0f3;font-weight:800;letter-spacing:.7px;text-transform:uppercase;display:flex;align-items:center;gap:6px}
@@ -582,7 +603,7 @@ function escapeHtml(value){
 .habit-progress-add button,.habit-progress-config{height:29px;padding:4px 9px;border:1px solid #514675;border-radius:6px;background:#292342;color:#e1d5ff;font-size:13px;font-weight:800;white-space:nowrap}.habit-progress-add button.is-tick{width:31px;padding:0;border-color:#397d73;background:#173a39;color:#83f0d4;font-size:17px}.habit-progress-add button:disabled{opacity:.45;cursor:default}
 .habit-progress-config{width:29px;padding:0;font-size:14px}
 .habit.done .habit-progress{border-color:#246b65;background:rgba(13,51,49,.25)}
-@media(max-width:760px){.habit{grid-template-columns:20px 24px minmax(90px,.8fr) minmax(190px,1.4fr) 22px;column-gap:7px;padding:11px 10px}.habit-progress{grid-template-columns:minmax(0,1fr) auto auto;gap:6px;padding:7px}.habit-progress-label{font-size:9px}.habit-progress-count{font-size:10px}.habit-progress-add input{width:48px}}\n@media(max-width:520px){.habit{grid-template-columns:20px 24px minmax(0,1fr) 22px;row-gap:8px}.habit-progress{grid-column:2/5;grid-row:2;grid-template-columns:minmax(0,1fr) auto auto}.habit>.delete{grid-column:4;grid-row:1}}
+@media(max-width:760px){.habit{grid-template-columns:20px 24px minmax(90px,.8fr) minmax(190px,1.4fr);column-gap:7px;padding:11px 10px}.habit-progress{grid-template-columns:minmax(0,1fr) auto auto;gap:6px;padding:7px}.habit-progress-label{font-size:9px}.habit-progress-count{font-size:10px}.habit-progress-add input{width:48px}}\n@media(max-width:520px){.habit{grid-template-columns:20px 24px minmax(0,1fr);row-gap:8px}.habit-progress{grid-column:2/4;grid-row:2;grid-template-columns:minmax(0,1fr) auto auto}}
 @media(max-width:390px){.habit-progress{padding:7px}.habit-progress-count{font-size:10px}}
 </style>
 
@@ -651,8 +672,8 @@ button,select,input{max-width:100%}
  .metric{font-size:25px}
  .section-head{align-items:flex-start}
  .section-head h2{font-size:16px}
- .habit{display:grid;grid-template-columns:20px 24px minmax(0,1fr) 22px;gap:7px;padding:10px}
- .habit-progress{grid-column:2/5;grid-row:2;width:100%;min-width:0}
+ .habit{display:grid;grid-template-columns:20px 24px minmax(0,1fr);gap:7px;padding:10px}
+ .habit-progress{grid-column:2/4;grid-row:2;width:100%;min-width:0}
  .habit-name{font-size:13px}
  .habit-progress{grid-template-columns:minmax(0,1fr) auto;gap:6px;padding:7px}
  .habit-progress-info{grid-column:1/-1}
@@ -706,7 +727,7 @@ button,select,input{max-width:100%}
  .habit-emoji-picker{grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;padding:8px}
  .emoji-choice{width:100%;aspect-ratio:1;font-size:clamp(18px,5.5vw,22px);padding:0}
 }
-</style>\n
+</style>
 <style id="pomodoro-styles">
 #pomodoroPage[hidden]{display:none!important}
 .pomodoro-card{max-width:760px;margin:0 auto 16px;padding:clamp(18px,4vw,30px)}
@@ -1074,12 +1095,12 @@ body.pomodoro-fallback-active{overflow:hidden!important}
   </div>
 
 
-  <nav class="page-nav" aria-label="Main navigation">
-    <button type="button" class="page-tab active" data-page="dashboardPage">⚔ Dashboard</button>
-    <button type="button" class="page-tab" data-page="statisticsPage">▥ Statistics</button>
-    <button type="button" class="page-tab" data-page="managementPage">⚙ Habit Management</button>
-    <button type="button" class="page-tab" data-page="pomodoroPage">🍅 Pomodoro</button>
-    <button type="button" class="page-tab" data-page="accountabilityPage">🤝 Accountability</button>
+  <nav class="page-nav page-nav-icons" aria-label="Main navigation">
+    <button type="button" class="page-tab active" data-page="dashboardPage" aria-label="Dashboard" title="Dashboard"><span aria-hidden="true">⚔</span></button>
+    <button type="button" class="page-tab" data-page="statisticsPage" aria-label="Statistics" title="Statistics"><span aria-hidden="true">▥</span></button>
+    <button type="button" class="page-tab" data-page="managementPage" aria-label="Habit Management" title="Habit Management"><span aria-hidden="true">⚙</span></button>
+    <button type="button" class="page-tab" data-page="pomodoroPage" aria-label="Pomodoro" title="Pomodoro"><span aria-hidden="true">🍅</span></button>
+    <button type="button" class="page-tab" data-page="accountabilityPage" aria-label="Accountability" title="Accountability"><span aria-hidden="true">🤝</span></button>
   </nav>
   <div id="dashboardPage">
   <section class="hunter-overview-card card">
@@ -1114,26 +1135,13 @@ body.pomodoro-fallback-active{overflow:hidden!important}
   <section class="card">
     <div class="section-head">
       <h2>Today's habits</h2>
-      <div class="actions"><button id="resetToday">Uncheck today</button><button id="export">Export data</button></div>
+      
     </div>
     <div class="habits" id="habitList"></div>
     
   </section>
 
-  <section class="card completion-visual">
-    <div class="section-head"><h2>Completion overview</h2><span class="tag">Live progress</span></div>
-    <div class="completion-visual-grid">
-      <div class="completion-donut-wrap">
-        <div class="completion-donut" id="completionDonut"><div class="donut-center"><strong id="donutPercent">0%</strong><small>today</small></div></div>
-        <div class="donut-caption"><strong id="donutDone">0 / 0</strong><span>quests completed</span></div>
-      </div>
-      <div class="completion-bars-wrap">
-        <div class="chart-title">Last 7 days</div>
-        <div class="completion-bars" id="completionBars"></div>
-        <div class="chart-footnote">Each bar shows the percentage of habits completed that day.</div>
-      </div>
-    </div>
-  </section>
+
   </div>
   <section id="hunterProfilePage" hidden>
     <div class="stats-title-row">
@@ -2327,37 +2335,26 @@ function render(){
   });
   const emoji=document.createElement('span');emoji.className='habit-emoji';emoji.textContent=h.emoji||habitEmoji(h.name);emoji.setAttribute('aria-hidden','true');
   const name=document.createElement('span');name.className='habit-name';name.textContent=h.name;
-  const del=document.createElement('button');del.className='delete';del.type='button';del.textContent='×';del.title='Remove habit';del.addEventListener('click',()=>{if(confirm('Remove "'+h.name+'" from your habit list? Past daily records are kept.')){data.habits=data.habits.filter(x=>x.id!==h.id);save();render()}});
-  row.append(cb,emoji,name,del);
+  row.append(cb,emoji,name);
   const oneTime=target===1 && ['times','time','once','check','checks','session','sessions'].includes(String(tracker.unit).toLowerCase());
   if(!oneTime){
    const progress=document.createElement('div');progress.className='habit-progress';
    const info=document.createElement('div');info.className='habit-progress-info';
-   const label=document.createElement('div');label.className='habit-progress-label';label.textContent=tracker.label||'Progress';
    const bar=document.createElement('div');bar.className='habit-progress-track';const fill=document.createElement('span');fill.style.width=Math.min(100,amount/target*100)+'%';bar.append(fill);
-   info.append(label,bar);
+   info.append(bar);
    const count=document.createElement('div');count.className='habit-progress-count';count.textContent=(Number.isInteger(amount)?amount:amount.toFixed(2))+' / '+target+' '+tracker.unit;
    const actions=document.createElement('div');actions.className='habit-progress-actions';
    const addWrap=document.createElement('div');addWrap.className='habit-progress-add';
-   const amountInput=document.createElement('input');amountInput.type='number';amountInput.min='0.01';amountInput.step=tracker.step||1;amountInput.placeholder='+';amountInput.setAttribute('aria-label','Amount to add');
+   const amountInput=document.createElement('input');amountInput.type='number';amountInput.className='habit-progress-amount-input';amountInput.min='0.01';amountInput.step=tracker.step||1;amountInput.placeholder='+';amountInput.setAttribute('aria-label','Amount to add');
    const addBtn=document.createElement('button');addBtn.type='button';addBtn.textContent='+';
    addBtn.title='Add progress';addBtn.setAttribute('aria-label','Add progress');
-   addBtn.addEventListener('click',()=>{const n=Number(amountInput.value);if(!Number.isFinite(n)||n<=0){amountInput.focus();return;}setHabitAmount(h,Math.min(target,amount+n));});
+   addBtn.addEventListener('click',()=>{const entered=amountInput.value.trim();const n=entered===''?Number(tracker.step||1):Number(entered);if(!Number.isFinite(n)||n<=0){amountInput.focus();return;}setHabitAmount(h,Math.min(target,amount+n));amountInput.value='';});
    amountInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addBtn.click();}});
    addWrap.append(amountInput,addBtn);
    const minusBtn=document.createElement('button');minusBtn.type='button';minusBtn.className='habit-progress-config';minusBtn.textContent='−';minusBtn.title='Decrease progress by '+(tracker.step||1)+' '+tracker.unit;
    minusBtn.setAttribute('aria-label','Decrease '+h.name+' progress');
    minusBtn.addEventListener('click',()=>setHabitAmount(h,Math.max(0,amount-Number(tracker.step||1))));
-   const config=document.createElement('button');config.type='button';config.className='habit-progress-config';config.textContent='⚙';config.title='Configure progress unit and daily target';
-   config.setAttribute('aria-label','Configure '+h.name+' progress');
-   config.addEventListener('click',()=>{
-    const unit=prompt('Tracking unit (pages, min, hours, km, glasses, etc.):',tracker.unit);if(unit===null)return;
-    const cleanUnit=unit.trim();if(!cleanUnit){alert('Unit cannot be empty.');return;}
-    const goal=Number(prompt('Daily target for '+cleanUnit+':',String(tracker.target)));if(!Number.isFinite(goal)||goal<=0){alert('Enter a target greater than zero.');return;}
-    const step=Number(prompt('Amount increment (e.g. 1, 5, 0.25):',String(tracker.step||1)));if(!Number.isFinite(step)||step<=0){alert('Enter a valid increment.');return;}
-    tracker.unit=cleanUnit;tracker.target=goal;tracker.step=step;tracker.label=tracker.label||h.name;save();render();
-   });
-   actions.append(addWrap,minusBtn,config);progress.append(info,count,actions);row.append(progress);
+   actions.append(addWrap,minusBtn);progress.append(info,count,actions);row.append(progress);
   }
   list.append(row);
  });
@@ -2380,13 +2377,6 @@ function render(){
  let best=-1,bestLabel='—';
  for(let i=6;i>=0;i--){let d=new Date();d.setDate(d.getDate()-i);let k=d.toLocaleDateString('en-CA'),v=pct(k);if(v>best){best=v;bestLabel=v+'%'}}
  document.getElementById('bestDay').textContent=bestLabel;
- document.getElementById('donutPercent').textContent=p+'%';
- document.getElementById('donutDone').textContent=done+' / '+total;
- const donut=document.getElementById('completionDonut');
- donut.style.background='conic-gradient(#9b83f2 0deg '+(p*3.6)+'deg,#28334d '+(p*3.6)+'deg 360deg)';
- const bars=[];
- for(let j=6;j>=0;j--){const day=new Date();day.setHours(12,0,0,0);day.setDate(day.getDate()-j);const key=day.toLocaleDateString('en-CA');bars.push({label:day.toLocaleDateString(undefined,{weekday:'short'}),value:pct(key)});}
- document.getElementById('completionBars').innerHTML=bars.map(b=>'<div class="completion-bar-col"><span class="completion-bar-value">'+b.value+'%</span><div class="completion-bar-track"><div class="completion-bar-fill" style="height:'+b.value+'%"></div></div><span class="completion-bar-day">'+b.label+'</span></div>').join('');
 
 }
 const habitType=document.getElementById('habitType'),measurableFields=document.getElementById('measurableFields'),habitUnit=document.getElementById('habitUnit'),customUnitWrap=document.getElementById('customUnitWrap');
@@ -2518,8 +2508,6 @@ document.getElementById('editHabitButton').addEventListener('click',()=>{
  document.getElementById('newHabit').focus();
  document.getElementById('addForm').scrollIntoView({behavior:'smooth',block:'center'});
 });
-document.getElementById('resetToday').addEventListener('click',()=>{if(confirm('Uncheck all habits for today?')){data.days[todayKey()]=[];data.habitProgress[todayKey()]={};save();render()}});
-document.getElementById('export').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='habit-tracker-backup.json';a.click();URL.revokeObjectURL(url)});
 
 let statsDays=7;
 function statsDateKey(date){return date.toLocaleDateString('en-CA');}
@@ -2974,5 +2962,36 @@ data=createFreshPlayerData();ensureProgress();render();renderPomodoroSubjects();
   .pomo-chart-row{grid-template-columns:60px minmax(0,1fr) 48px;font-size:11px}
 }
 </style>
-</body>
+<style id="icon-nav-final-layout">
+.page-nav.page-nav-icons{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;width:100%!important;max-width:100%!important;box-sizing:border-box;overflow:hidden}
+.page-nav.page-nav-icons>.page-tab{display:grid!important;grid-column:auto!important;flex:none!important;width:auto!important;min-width:0!important;max-width:none!important;justify-self:stretch;align-self:stretch;place-items:center;padding:8px 4px}
+@media(max-width:620px){.page-nav.page-nav-icons{grid-template-columns:repeat(5,minmax(0,1fr))!important}.page-nav.page-nav-icons>.page-tab:last-child{grid-column:auto!important}}
+</style>
+<style id="header-icon-padding-fix">
+/* Normalize top-right action buttons: consistent box sizing, zero browser padding,
+   and truly centered icons with comfortable touch targets. */
+.pomodoro-fullscreen,
+.guild-bell,
+.profile-avatar-btn{
+  box-sizing:border-box!important;
+  padding:0!important;
+  display:inline-grid!important;
+  place-items:center!important;
+  line-height:1!important;
+  flex:0 0 42px!important;
+  width:42px!important;
+  height:42px!important;
+  min-width:42px!important;
+  min-height:42px!important;
+}
+.pomodoro-fullscreen{font-size:21px!important}
+.guild-bell{font-size:19px!important}
+.profile-avatar-btn{overflow:hidden!important}
+.pomodoro-card-top,.top-actions{align-items:center!important}
+@media(max-width:520px){
+ .pomodoro-fullscreen,.guild-bell,.profile-avatar-btn{
+   width:42px!important;height:42px!important;flex-basis:42px!important;
+ }
+}
+</style></body>
 </html>
