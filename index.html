@@ -1253,6 +1253,14 @@ body.pomodoro-fallback-active{overflow:hidden!important}
         <button type="button" id="removeProfilePictureBtn" class="profile-remove-btn">Remove picture</button>
       </div>
     </section>
+    <article class="card accountability-card pomo-study-preferences profile-study-preferences" id="pomoStudyPreferences">
+      <span class="accountability-status">STUDY SETTINGS</span><h3>⚙️ Study preferences</h3>
+      <p>Set the daily study target and choose what friends can see.</p>
+      <label for="pomoAccDailyGoal">Daily study goal (hours)</label><input id="pomoAccDailyGoal" type="number" min="0.25" max="24" step="0.25" value="2">
+      <label class="accountability-toggle"><input id="pomoAccShareStatus" type="checkbox" checked> Share my live study status with friends</label>
+      <button type="button" class="primary" id="pomoSaveAccPrefsBtn">Save preferences</button>
+      <div id="pomoAccPrefsFeedback" class="accountability-feedback" role="status"></div>
+    </article>
   <section class="hunter-panel card">
     <div class="hunter-head"><div><div class="panel-kicker">PLAYER PROFILE</div><h2>HUNTER STATUS</h2></div><div class="level-pill" id="levelBadge">LEVEL 01</div></div>
     <div class="hunter-main">
@@ -1429,7 +1437,7 @@ body.pomodoro-fallback-active{overflow:hidden!important}
       <div class="pomodoro-finish-row">
         <button type="button" id="pomodoroFinishEarly">Finish Early</button>
       </div>
-      <div class="pomodoro-session-count"><strong id="pomodoroSessions">0</strong><span>completed focus sessions</span></div>
+      
     </section>
     <section class="card pomodoro-history-card">
       <div class="section-head pomo-day-nav-head"><h2>Study sessions by day</h2><div class="pomo-day-nav"><button type="button" id="pomoStudyDayPrev" aria-label="Previous day" title="Previous day">‹</button><span class="tag" id="pomoStudyDayLabel">Today</span><button type="button" id="pomoStudyDayNext" aria-label="Next day" title="Next day" disabled>›</button></div></div>
@@ -1437,13 +1445,6 @@ body.pomodoro-fallback-active{overflow:hidden!important}
     </section>
     <section class="pomodoro-analytics">
 
-    <div class="stats-title-row"><div><div class="panel-kicker">STUDY ANALYTICS</div><h2>POMODORO STATISTICS</h2><p class="history-note">Compare your focused study time across subjects and days.</p></div></div>
-    <div class="stats-grid pomodoro-stats-summary">
-      <article class="card"><div class="metric-label">Total focus time</div><div class="metric" id="pomoTotalMinutes">0 min</div></article>
-      <article class="card"><div class="metric-label">Completed sessions</div><div class="metric" id="pomoTotalSessions">0</div></article>
-      <article class="card"><div class="metric-label">Subjects studied</div><div class="metric" id="pomoSubjectCount">0</div></article>
-      <article class="card"><div class="metric-label">Daily average (7 days)</div><div class="metric" id="pomoDailyAverage">0 min</div></article>
-    </div>
     <section class="card pomodoro-stats-panel"><div class="section-head pomo-subject-heading"><h2>Daily focus time</h2><div class="pomo-subject-filters" role="group" aria-label="Filter subject focus time"><button type="button" class="pomo-period-btn active" data-pomo-period="daily" aria-pressed="true">Daily</button><button type="button" class="pomo-period-btn" data-pomo-period="weekly" aria-pressed="false">Weekly</button><button type="button" class="pomo-period-btn" data-pomo-period="monthly" aria-pressed="false">Monthly</button><button type="button" class="pomo-period-btn" data-pomo-period="custom" aria-pressed="false">Custom</button></div></div><div class="pomo-custom-range" id="pomoSubjectCustomRange" hidden><label>From <input type="date" id="pomoSubjectDateFrom"></label><label>To <input type="date" id="pomoSubjectDateTo"></label><span id="pomoSubjectRangeFeedback" role="status"></span></div><div class="section-head pomo-subject-period-label"><span class="tag" id="pomoSubjectPeriodLabel">Today</span></div><div class="pomo-subject-visuals">
       <div id="pomoSubjectChart" class="pomo-chart"></div>
       <div class="pomo-subject-pie-wrap">
@@ -1454,24 +1455,24 @@ body.pomodoro-fallback-active{overflow:hidden!important}
     
 
     <section class="card accountability-overview pomo-accountability-overview" id="pomoStudyDashboard">
-      <div class="section-head"><div><span class="tag">HUNTER STATUS</span><h2>Your study dashboard</h2><p class="history-note">A live snapshot of your focus, consistency and guild activity.</p></div><span class="accountability-status">ONLINE</span></div>
-      <div class="accountability-stats-grid">
+      <div class="section-head">
+        <div><span class="tag">HUNTER STATUS</span><h2>Your study dashboard</h2><p class="history-note">A live snapshot of your focus, consistency and guild activity.</p></div>
+        <span class="accountability-status">ONLINE</span>
+      </div>
+      <div class="accountability-stats-grid pomo-unified-stats-grid">
         <div class="stat-card"><small>Today focused</small><strong id="pomoAccTodayMinutes">0 min</strong></div>
         <div class="stat-card"><small>Sessions today</small><strong id="pomoAccTodaySessions">0</strong></div>
         <div class="stat-card"><small>Last 7 days</small><strong id="pomoAccWeekMinutes">0 min</strong></div>
         <div class="stat-card"><small>Study streak</small><strong id="pomoAccStudyStreak">—</strong></div>
+        <div class="stat-card"><small>Subjects studied</small><strong id="pomoSubjectCount">0</strong></div>
+        <div class="stat-card"><small>Daily average (7 days)</small><strong id="pomoDailyAverage">0 min</strong></div>
       </div>
-      <div class="accountability-progress"><div class="section-head"><strong>Daily study goal</strong><span id="pomoAccGoalLabel">0 / 120 min</span></div><div class="progress-track"><span id="pomoAccGoalProgress" style="width:0%"></span></div></div>
+      <div class="accountability-progress">
+        <div class="section-head"><strong>Daily study goal</strong><span id="pomoAccGoalLabel">0 / 120 min</span></div>
+        <div class="progress-track"><span id="pomoAccGoalProgress" style="width:0%"></span></div>
       </div>
     </section>
-    <article class="card accountability-card pomo-study-preferences" id="pomoStudyPreferences">
-      <span class="accountability-status">YOUR GUILD PROFILE</span><h3>⚙️ Study preferences</h3>
-      <p>Set the daily study target and choose what friends can see.</p>
-      <label for="pomoAccDailyGoal">Daily study goal (hours)</label><input id="pomoAccDailyGoal" type="number" min="0.25" max="24" step="0.25" value="2">
-      <label class="accountability-toggle"><input id="pomoAccShareStatus" type="checkbox" checked> Share my live study status with friends</label>
-      <button type="button" class="primary" id="pomoSaveAccPrefsBtn">Save preferences</button>
-      <div id="pomoAccPrefsFeedback" class="accountability-feedback" role="status"></div>
-    </article>
+    
 
     <section class="card day24-panel" id="pomo24HourPanel">
       <div class="section-head day24-heading">
@@ -1484,6 +1485,31 @@ body.pomodoro-fallback-active{overflow:hidden!important}
       </div>
       <div class="day24-legend" id="pomo24Legend"><span><i class="day24-dot wasted"></i>Wasted · 24h</span></div>
       <p class="day24-note">“Wasted” means no study session was logged for that time. It does not automatically mean the time was wasted.</p>
+      <details class="manual-study-entry" id="manualStudyEntry">
+        <summary>Missed recording a study session? <span>Add it here</span></summary>
+        <p class="history-note">Add a past or missed session. It will be included in your study history, statistics, daily breakdown, study goal and friend activity.</p>
+        <form id="manualStudySessionForm" class="manual-study-form">
+          <label>Subject
+            <select id="manualStudySubject" required><option value="">Choose a subject</option></select>
+          </label>
+          <label>Date
+            <input id="manualStudyDate" type="date" required>
+          </label>
+          <label>Completed at
+            <input id="manualStudyTime" type="time" value="23:59" required>
+          </label>
+          <div class="manual-study-duration">
+            <label>Hours
+              <input id="manualStudyHours" type="number" min="0" max="23" step="1" value="0" required>
+            </label>
+            <label>Minutes
+              <input id="manualStudyMinutes" type="number" min="0" max="59" step="1" value="30" required>
+            </label>
+          </div>
+          <button class="primary" type="submit">Save study session</button>
+          <div id="manualStudyFeedback" class="accountability-feedback" role="status" aria-live="polite"></div>
+        </form>
+      </details>
     </section>
 
 
@@ -2276,7 +2302,8 @@ async function markAccountabilityNudgeRead(id){
 async function saveAccountabilityPrefs(){
  const goal=Number(document.getElementById('accDailyGoal')?.value),share=!!document.getElementById('accShareStatus')?.checked;
  if(!Number.isInteger(goal)||goal<15||goal>1440){document.getElementById('accPrefsFeedback').textContent='Enter a goal between 15 and 1440 minutes.';return;}
- data.accountabilityPrefs={dailyGoal:goal,shareStatus:share};save();
+ data.accountabilityPrefs={dailyGoal:goal,shareStatus:share};
+ syncDailyStudyHabitGoal();save();render();
  const el=document.getElementById('accPrefsFeedback');if(el)el.textContent='Preferences saved on this device.';
  renderAccountabilityOverview();
 }
@@ -2668,8 +2695,49 @@ function evaluateCompletionRewards(key){
  if(rewardsChanged)save();
 }
 
+function studyFocusSecondsForDay(dayKey=todayKey()){
+ return (Array.isArray(data.studySessions)?data.studySessions:[]).reduce((sum,session)=>{
+  if(!session?.completedAt)return sum;
+  const d=new Date(session.completedAt);
+  if(!Number.isFinite(d.getTime())||d.toLocaleDateString('en-CA')!==dayKey)return sum;
+  return sum+Math.max(0,Number(session.seconds)||Number(session.minutes||0)*60);
+ },0);
+}
+function getAutoStudyHabit(){
+ return data.habits.find(h=>{
+  const name=String(h.name||'').trim().toLowerCase();
+  if(!/^(study|learn)\\b/.test(name))return false;
+  const unit=String(trackerFor(h).unit||'').trim().toLowerCase();
+  return ['min','mins','minute','minutes','h','hr','hrs','hour','hours'].includes(unit);
+ })||null;
+}
+function syncDailyStudyHabitGoal(){
+ const habit=getAutoStudyHabit();
+ if(!habit)return false;
+ const tracker=trackerFor(habit),unit=String(tracker.unit||'').trim().toLowerCase();
+ const amount=Math.max(0,Number(tracker.target)||1);
+ const goalSeconds=amount*(['h','hr','hrs','hour','hours'].includes(unit)?3600:60);
+ const day=todayKey(),focused=studyFocusSecondsForDay(day);
+ data.days=data.days||{};
+ const done=Array.isArray(data.days[day])?data.days[day]:[];
+ data.studyGoalAutoCompleted=data.studyGoalAutoCompleted||{};
+ if(focused>=goalSeconds){
+  if(!done.includes(habit.id))data.days[day]=[...done,habit.id];
+  if(!data.studyGoalAutoCompleted[day]){
+   data.studyGoalAutoCompleted[day]=true;
+   evaluateCompletionRewards(day);
+  }
+  return !done.includes(habit.id);
+ }
+ if(done.includes(habit.id)){
+  data.days[day]=done.filter(id=>id!==habit.id);
+  return true;
+ }
+ return false;
+}
 function render(){
  if(backfillStudySessionsToHabit())save();
+ if(syncDailyStudyHabitGoal())save();
  const today=todayKey(), checks=completed(today), done=data.habits.filter(h=>checks.includes(h.id)).length, total=data.habits.length, p=total?Math.round(done/total*100):0;
  renderHunter();
  document.getElementById('todayLabel').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',year:'numeric',month:'long',day:'numeric'});
@@ -2696,8 +2764,18 @@ function render(){
  data.habits.forEach(h=>{const option=document.createElement('option');option.value=h.id;option.textContent=h.name;editSelect.append(option)});
  data.habits.forEach(h=>{
   const tracker=trackerFor(h),amount=habitAmountToday(h),target=Number(tracker.target);
-  const row=document.createElement('div');row.className='habit'+(checks.includes(h.id)?' done':'');
+  const isStudyHabit=getAutoStudyHabit()?.id===h.id;
+  const row=document.createElement('div');row.className='habit'+(checks.includes(h.id)?' done':'')+(isStudyHabit?' habit-study-shortcut':'');
+  if(isStudyHabit){
+   row.setAttribute('role','link');row.setAttribute('tabindex','0');
+   row.setAttribute('aria-label','Open Pomodoro for your study habit');
+   row.title='Open Pomodoro';
+   const openPomodoro=()=>document.querySelector('.page-tab[data-page="pomodoroPage"]')?.click();
+   row.addEventListener('click',e=>{if(e.target.closest('input,button,select,a'))return;openPomodoro();});
+   row.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target===row){e.preventDefault();openPomodoro();}});
+  }
   const cb=document.createElement('input');cb.type='checkbox';cb.checked=checks.includes(h.id);cb.setAttribute('aria-label','Complete '+h.name);
+  if(isStudyHabit){cb.disabled=true;cb.title='Automatically completes when you reach this habit’s study-time target.';}
   cb.addEventListener('change',()=>{
    let a=completed(today).filter(x=>x!==h.id);
    if(cb.checked){
@@ -2713,7 +2791,7 @@ function render(){
   const name=document.createElement('span');name.className='habit-name';name.textContent=h.name;
   row.append(cb,emoji,name);
   const oneTime=target===1 && ['times','time','once','check','checks','session','sessions'].includes(String(tracker.unit).toLowerCase());
-  if(!oneTime){
+  if(!oneTime&&!isStudyHabit){
    const progress=document.createElement('div');progress.className='habit-progress';
    const info=document.createElement('div');info.className='habit-progress-info';
    const bar=document.createElement('div');bar.className='habit-progress-track';const fill=document.createElement('span');fill.style.width=Math.min(100,amount/target*100)+'%';bar.append(fill);
@@ -3019,13 +3097,14 @@ function navigatePomodoroStudyDay(direction){
  const today=new Date();today.setHours(0,0,0,0);
  let oldest=today;
  validDates.forEach(d=>{const day=new Date(d);day.setHours(0,0,0,0);if(day<oldest)oldest=day;});
- const maxOffset=Math.max(0,Math.floor((today-oldest)/86400000));
+ const dayNumber=d=>Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/86400000;
+ const maxOffset=Math.max(0,dayNumber(today)-dayNumber(oldest));
  pomodoroStudyDayOffset=Math.max(0,Math.min(maxOffset,pomodoroStudyDayOffset+direction));
  renderPomodoroHistory();
 }
 function renderPomodoroHistory(){
  const history=document.getElementById('pomodoroHistory'),sessions=(Array.isArray(data.studySessions)?data.studySessions:[]).filter(x=>x&&x.completedAt&&x.source!=='habit-completion');
- document.getElementById('pomodoroSessions').textContent=sessions.length;
+ const pomodoroSessionCount=document.getElementById('pomodoroSessions');if(pomodoroSessionCount)pomodoroSessionCount.textContent=sessions.length;
  const selectedDate=new Date();selectedDate.setHours(0,0,0,0);selectedDate.setDate(selectedDate.getDate()-pomodoroStudyDayOffset);
  const keyFor=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
  const selectedKey=keyFor(selectedDate),today=new Date();today.setHours(0,0,0,0);
@@ -3035,7 +3114,8 @@ function renderPomodoroHistory(){
  if(labelEl)labelEl.textContent=label;
  const validDates=sessions.map(x=>new Date(x.completedAt)).filter(d=>Number.isFinite(d.getTime()));
  let oldest=today;validDates.forEach(d=>{const day=new Date(d);day.setHours(0,0,0,0);if(day<oldest)oldest=day;});
- const maxOffset=Math.max(0,Math.floor((today-oldest)/86400000));
+ const dayNumber=d=>Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/86400000;
+ const maxOffset=Math.max(0,dayNumber(today)-dayNumber(oldest));
  const prev=document.getElementById('pomoStudyDayPrev'),next=document.getElementById('pomoStudyDayNext');
  if(prev)prev.disabled=pomodoroStudyDayOffset>=maxOffset;
  if(next)next.disabled=pomodoroStudyDayOffset===0;
@@ -3053,6 +3133,12 @@ function renderPomodoroHistory(){
  }
  if(document.getElementById('pomoSubjectChart'))renderPomodoroStats();
 }
+function bindPomodoroStudyDayNavigation(){
+ const prev=document.getElementById('pomoStudyDayPrev'),next=document.getElementById('pomoStudyDayNext');
+ if(prev&&!prev.dataset.bound){prev.dataset.bound='1';prev.addEventListener('click',()=>navigatePomodoroStudyDay(1));}
+ if(next&&!next.dataset.bound){next.dataset.bound='1';next.addEventListener('click',()=>navigatePomodoroStudyDay(-1));}
+}
+bindPomodoroStudyDayNavigation();
 function formatPomodoroTime(seconds){const m=Math.floor(seconds/60),sec=seconds%60;return String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');}
 function updatePomodoroDisplay(){
  document.getElementById('pomodoroClock').textContent=formatPomodoroTime(pomodoroRemaining);
@@ -3077,6 +3163,7 @@ function syncPomodoroToStudyHabit(subject,elapsedSeconds,completedAt=new Date().
  const seconds=Math.max(0,Number(elapsedSeconds)||0);
  if(seconds<=0)return null;
  const studyHabit=data.habits.find(h=>{
+  if(getAutoStudyHabit()?.id===h.id)return false;
   if(!/\b(study|learn|course|revision|coding|practice|german)\b/i.test(h.name))return false;
   const unit=String(trackerFor(h).unit||'').toLowerCase();
   return ['min','mins','minute','minutes','h','hr','hrs','hour','hours'].includes(unit);
@@ -3126,7 +3213,8 @@ function tickPomodoro(){
    data.studySessions.push(session);
    void publishFriendStudySession(session);
    const linkedHabit=syncPomodoroToStudyHabit(subject,1500,session.completedAt,session.id);
-   save();renderPomodoroHistory();
+   syncDailyStudyHabitGoal();
+   save();render();renderPomodoroHistory();
    document.getElementById('pomodoroStatus').textContent=linkedHabit?'Focus session complete. '+linkedHabit+' habit updated. Take a break.':'Focus session complete. Add a measurable Study habit (minutes or hours) to sync progress.';
    alert('Pomodoro complete! Great work on '+subject+'.');
   }else document.getElementById('pomodoroStatus').textContent='Break complete. Ready for another focus session?';
@@ -3187,13 +3275,66 @@ document.getElementById('pomodoroFinishEarly').addEventListener('click',()=>{
  data.studySessions.push(session);
  void publishFriendStudySession(session);
  const linkedHabit=syncPomodoroToStudyHabit(subject,elapsedSeconds,session.completedAt,session.id);
- save();renderPomodoroHistory();
+ syncDailyStudyHabitGoal();
+ save();render();renderPomodoroHistory();
  document.getElementById('pomodoroStatus').textContent=linkedHabit?'Session saved. '+linkedHabit+' habit updated with actual study time.':'Session saved. Add a measurable Study habit (minutes or hours) to sync progress.';
  document.getElementById('pomodoroStart').textContent='Start';
  setPomodoroSubjectLock(false);
  publishPomodoroMirror();
 });
 document.getElementById('pomodoroReset').addEventListener('click',()=>setPomodoroMode(pomodoroMode));
+
+function populateManualStudySubjects(){
+ const select=document.getElementById('manualStudySubject');if(!select)return;
+ const current=select.value;
+ const subjects=[...new Set([...(Array.isArray(data.studySubjects)?data.studySubjects:[]),...(document.getElementById('pomodoroSubject')?[...document.getElementById('pomodoroSubject').options].map(o=>o.value).filter(Boolean):[])])];
+ select.innerHTML='<option value="">Choose a subject</option>'+subjects.map(s=>'<option value="'+escapeHtml(s)+'">'+escapeHtml(s)+'</option>').join('');
+ if(subjects.includes(current))select.value=current;
+}
+function bindManualStudyEntry(){
+ const form=document.getElementById('manualStudySessionForm');if(!form||form.dataset.bound)return;
+ form.dataset.bound='1';
+ const date=document.getElementById('manualStudyDate');if(date&&!date.value){const now=new Date();date.value=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');}
+ populateManualStudySubjects();
+ form.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const subject=document.getElementById('manualStudySubject').value.trim();
+  const dateValue=document.getElementById('manualStudyDate').value;
+  const timeValue=document.getElementById('manualStudyTime').value;
+  const hours=Number(document.getElementById('manualStudyHours').value)||0;
+  const minutes=Number(document.getElementById('manualStudyMinutes').value)||0;
+  const feedback=document.getElementById('manualStudyFeedback');
+  const seconds=(hours*60+minutes)*60;
+  if(!subject||!dateValue||!timeValue||seconds<=0||minutes>59||hours>23){feedback.textContent='Choose a subject, date and valid duration greater than zero.';feedback.dataset.type='error';return;}
+  const completedAt=new Date(dateValue+'T'+timeValue+':00');
+  if(!Number.isFinite(completedAt.getTime())){feedback.textContent='The date or completion time is invalid.';feedback.dataset.type='error';return;}
+  const dayStart=new Date(dateValue+'T00:00:00'),dayEnd=new Date(dayStart);dayEnd.setDate(dayEnd.getDate()+1);
+  const existing=(Array.isArray(data.studySessions)?data.studySessions:[]).filter(s=>s&&s.completedAt&&s.source!=='habit-completion').reduce((sum,s)=>{
+   const d=new Date(s.completedAt);return Number.isFinite(d.getTime())&&d>=dayStart&&d<dayEnd?sum+Math.max(0,Number(s.seconds)||Number(s.minutes||0)*60):sum;
+  },0);
+  if(existing+seconds>86400){feedback.textContent='This would record more than 24 study hours for that date. Check the duration or existing entries.';feedback.dataset.type='error';return;}
+  const id='manual:'+newId();
+  const session={id,subject,completedAt:completedAt.toISOString(),startedAt:new Date(completedAt.getTime()-seconds*1000).toISOString(),minutes:Math.round(seconds/60*10)/10,seconds,source:'manual'};
+  data.studySessions=Array.isArray(data.studySessions)?data.studySessions:[];
+  data.studySessions.push(session);
+  syncPomodoroToStudyHabit(subject,seconds,session.completedAt,id);
+  syncDailyStudyHabitGoal();
+  save();
+  void publishFriendStudySession(session);
+  render();
+  renderPomodoroHistory();
+  renderPomodoroStats();
+  renderPomodoro24HourBreakdown();
+  feedback.textContent='Session saved. Your study history, statistics and daily totals have been updated.';
+  feedback.dataset.type='ok';
+  document.getElementById('manualStudyHours').value='0';
+  document.getElementById('manualStudyMinutes').value='30';
+  populateManualStudySubjects();
+ });
+}
+bindManualStudyEntry();
+document.getElementById('manualStudyEntry')?.addEventListener('toggle',()=>{if(document.getElementById('manualStudyEntry')?.open)populateManualStudySubjects();});
+
 
 
 let pomoSubjectPeriod='daily';
@@ -3228,8 +3369,8 @@ function renderPomodoroStats(){
  const entries=Object.entries(subjects).sort((a,b)=>b[1]-a[1]),filteredTotal=entries.reduce((sum,x)=>sum+x[1],0);
  const periodLabel=document.getElementById('pomoSubjectPeriodLabel');if(periodLabel)periodLabel.textContent=window.label;
  const rangeFeedback=document.getElementById('pomoSubjectRangeFeedback');if(rangeFeedback)rangeFeedback.textContent=pomoSubjectPeriod==='custom'&&window.start===null?window.label:'';
- document.getElementById('pomoTotalMinutes').textContent=formatStudyDuration(totalSeconds);
- document.getElementById('pomoTotalSessions').textContent=sessions.length;
+ const totalFocusEl=document.getElementById('pomoTotalMinutes');if(totalFocusEl)totalFocusEl.textContent=formatStudyDuration(totalSeconds);
+ const completedSessionsEl=document.getElementById('pomoTotalSessions');if(completedSessionsEl)completedSessionsEl.textContent=sessions.length;
  document.getElementById('pomoSubjectCount').textContent=entries.length;
  const today=new Date();today.setHours(12,0,0,0);const days=[];
  for(let i=6;i>=0;i--){const d=new Date(today);d.setDate(d.getDate()-i);const key=d.toLocaleDateString('en-CA');
@@ -3399,7 +3540,7 @@ document.querySelectorAll('.range-btn').forEach(b=>b.addEventListener('click',()
 
 // Start with an anonymous preview. Authenticated cloud data is loaded only
 // after Supabase confirms the signed-in user; never hydrate from shared localStorage.
-data=createFreshPlayerData();ensureProgress();render();renderPomodoroSubjects();renderPomodoroHistory();setPomodoroMode('focus');setSignedInUI(null);initCloud();
+data=createFreshPlayerData();ensureProgress();render();renderPomodoroSubjects();bindPomodoroStudyDayNavigation();renderPomodoroHistory();setPomodoroMode('focus');setSignedInUI(null);initCloud();
 </script>
 <style id="mobile-final-pass">
 /* Final mobile layout pass: navigation readability and overflow prevention */
@@ -3600,6 +3741,80 @@ data=createFreshPlayerData();ensureProgress();render();renderPomodoroSubjects();
 .study-live-toolbar,.friends-activity-toolbar{display:flex;align-items:center;gap:8px;flex:0 0 auto}
 .study-live-toolbar select,.friends-activity-toolbar select{max-width:190px;min-width:125px;padding:8px 28px 8px 10px;border:1px solid var(--line);border-radius:9px;background:#11182b;color:var(--text,#eeeaff);font:inherit;font-size:12px;min-height:36px}
 @media(max-width:620px){.study-live-toolbar,.friends-activity-toolbar{width:100%;justify-content:flex-end}.study-live-toolbar select,.friends-activity-toolbar select{max-width:180px;min-width:110px}.study-together-live .section-head,.accountability-friends-activity>.section-head{flex-wrap:wrap}}
+
+/* Unified Pomodoro dashboard: summary metrics live inside the dashboard */
+#pomoStudyDashboard .accountability-stats-grid,
+#pomoStudyDashboard .pomo-dashboard-extra-stats{margin-top:14px}
+#pomoStudyDashboard .pomo-dashboard-extra-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+#pomoStudyDashboard .pomo-dashboard-extra-stats .card{padding:14px;border:1px solid #343653;border-radius:12px;background:rgba(5,9,22,.42);min-width:0}
+#pomoStudyDashboard .pomo-dashboard-extra-stats .metric-label{font-size:11px;color:#a8abc8}
+#pomoStudyDashboard .pomo-dashboard-extra-stats .metric{font-size:22px;font-weight:800;color:#f3f1ff;margin-top:6px}
+@media(max-width:760px){#pomoStudyDashboard .pomo-dashboard-extra-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Clean, consistent eight-metric dashboard grid */
+#pomoStudyDashboard .pomo-unified-stats-grid{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:12px!important;
+  width:100%;
+  margin:18px 0 16px!important;
+}
+#pomoStudyDashboard .pomo-unified-stats-grid .stat-card{
+  box-sizing:border-box;
+  min-width:0;
+  min-height:86px;
+  padding:14px 16px!important;
+  display:flex!important;
+  flex-direction:column;
+  justify-content:space-between;
+  gap:10px!important;
+}
+#pomoStudyDashboard .pomo-unified-stats-grid .stat-card small{
+  font-size:12px;
+  line-height:1.35;
+  white-space:normal;
+  color:#aeb2cf;
+}
+#pomoStudyDashboard .pomo-unified-stats-grid .stat-card strong{
+  font-size:22px!important;
+  line-height:1.2;
+  overflow-wrap:anywhere;
+}
+#pomoStudyDashboard .accountability-progress{margin-top:6px}
+@media(max-width:760px){
+  #pomoStudyDashboard .pomo-unified-stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:380px){
+  #pomoStudyDashboard .pomo-unified-stats-grid{gap:8px!important}
+  #pomoStudyDashboard .pomo-unified-stats-grid .stat-card{padding:11px!important;min-height:78px}
+}
+
+
+/* The study habit is a shortcut into Pomodoro rather than a manual progress tracker. */
+.habit-study-shortcut{cursor:pointer;transition:border-color .16s ease,background .16s ease}
+.habit-study-shortcut:hover{border-color:#9b83f2;background:rgba(155,131,242,.07)}
+.habit-study-shortcut:focus-visible{outline:2px solid #a78bfa;outline-offset:2px}
+
+/* Study preferences now live with the hunter name and profile-picture settings. */
+#hunterProfilePage .profile-study-preferences{margin:14px 0 18px;max-width:100%;box-sizing:border-box}
+#hunterProfilePage .profile-study-preferences input[type="number"]{max-width:180px}
+
+/* Manual missed-session entry */
+.manual-study-entry{margin-top:18px;padding-top:14px;border-top:1px solid var(--line,#343653)}
+.manual-study-entry>summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;font-weight:700;color:var(--text,#f0edff)}
+.manual-study-entry>summary::-webkit-details-marker{display:none}
+.manual-study-entry>summary:after{content:"＋";font-size:18px;color:#b9a5ff}
+.manual-study-entry[open]>summary:after{content:"−"}
+.manual-study-entry>summary span{margin-left:auto;color:#b9a5ff;font-size:12px;font-weight:700}
+.manual-study-entry>.history-note{margin:10px 0 14px}
+.manual-study-form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:end}
+.manual-study-form label{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted,#aeb2cf)}
+.manual-study-form input,.manual-study-form select{width:100%;min-width:0;box-sizing:border-box}
+.manual-study-duration{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.manual-study-form button{min-height:40px}
+.manual-study-form .accountability-feedback{grid-column:1/-1}
+@media(max-width:700px){.manual-study-form{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:440px){.manual-study-form{grid-template-columns:1fr}.manual-study-entry>summary{align-items:flex-start;flex-wrap:wrap}}
 </style>
 
 </body>
