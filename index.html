@@ -846,9 +846,16 @@ button,select,input{max-width:100%}
 .pomodoro-session-count{display:flex;justify-content:center;align-items:baseline;gap:8px;color:var(--muted);font-size:12px}
 .pomodoro-session-count strong{font-size:23px;color:#e9e2ff}
 .pomodoro-history-card{max-width:760px;margin:0 auto}
-.pomodoro-history-row{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);font-size:13px}
-.pomodoro-history-row:last-child{border-bottom:0}
-.pomodoro-history-row span:last-child{color:var(--muted);white-space:nowrap}
+.pomodoro-day-group{padding:13px 0;border-bottom:1px solid var(--line)}
+.pomodoro-day-group:last-child{border-bottom:0}
+.pomodoro-day-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:9px;font-size:13px}
+.pomodoro-day-heading>strong{font-size:14px;color:var(--text,#f0edff)}
+.pomodoro-day-heading>span{color:var(--muted);white-space:nowrap;font-size:12px}
+.pomodoro-day-subjects{display:flex;flex-wrap:wrap;gap:7px}
+.pomodoro-day-subject{display:inline-flex;align-items:center;gap:8px;padding:6px 9px;border:1px solid var(--line);border-radius:8px;background:rgba(7,12,28,.32);font-size:12px}
+.pomodoro-day-subject strong{font-weight:650}
+.pomodoro-day-subject b{color:#b9a5ff;font-weight:750}
+@media(max-width:600px){.pomodoro-day-heading{align-items:flex-start;flex-direction:column;gap:3px}}
 @media(max-width:600px){.pomodoro-subject-row{grid-template-columns:1fr}.pomodoro-add-subject{align-items:end}.pomodoro-add-subject button{padding:11px 10px}.pomodoro-modes{gap:5px}.pomodoro-mode{font-size:10px;padding:8px 10px}}
 </style>
 
@@ -1425,7 +1432,7 @@ body.pomodoro-fallback-active{overflow:hidden!important}
       <div class="pomodoro-session-count"><strong id="pomodoroSessions">0</strong><span>completed focus sessions</span></div>
     </section>
     <section class="card pomodoro-history-card">
-      <div class="section-head"><h2>Recent study sessions</h2><span class="tag">Your history</span></div>
+      <div class="section-head pomo-day-nav-head"><h2>Study sessions by day</h2><div class="pomo-day-nav"><button type="button" id="pomoStudyDayPrev" aria-label="Previous day" title="Previous day">‹</button><span class="tag" id="pomoStudyDayLabel">Today</span><button type="button" id="pomoStudyDayNext" aria-label="Next day" title="Next day" disabled>›</button></div></div>
       <div id="pomodoroHistory" class="pomodoro-history"><div class="stats-empty">No study sessions yet.</div></div>
     </section>
     <section class="pomodoro-analytics">
@@ -1455,12 +1462,12 @@ body.pomodoro-fallback-active{overflow:hidden!important}
         <div class="stat-card"><small>Study streak</small><strong id="pomoAccStudyStreak">—</strong></div>
       </div>
       <div class="accountability-progress"><div class="section-head"><strong>Daily study goal</strong><span id="pomoAccGoalLabel">0 / 120 min</span></div><div class="progress-track"><span id="pomoAccGoalProgress" style="width:0%"></span></div></div>
-      <div class="accountability-subsection"><div class="section-head"><h4>Study time by subject</h4><span class="tag">7 DAYS</span></div><div id="pomoAccSubjectBreakdown" class="accountability-breakdown"><div class="accountability-placeholder">Your study activity will appear here.</div></div></div>
+      </div>
     </section>
     <article class="card accountability-card pomo-study-preferences" id="pomoStudyPreferences">
       <span class="accountability-status">YOUR GUILD PROFILE</span><h3>⚙️ Study preferences</h3>
       <p>Set the daily study target and choose what friends can see.</p>
-      <label for="pomoAccDailyGoal">Daily study goal (minutes)</label><input id="pomoAccDailyGoal" type="number" min="15" max="1440" step="15" value="120">
+      <label for="pomoAccDailyGoal">Daily study goal (hours)</label><input id="pomoAccDailyGoal" type="number" min="0.25" max="24" step="0.25" value="2">
       <label class="accountability-toggle"><input id="pomoAccShareStatus" type="checkbox" checked> Share my live study status with friends</label>
       <button type="button" class="primary" id="pomoSaveAccPrefsBtn">Save preferences</button>
       <div id="pomoAccPrefsFeedback" class="accountability-feedback" role="status"></div>
@@ -1517,13 +1524,9 @@ body.pomodoro-fallback-active{overflow:hidden!important}
         <div class="accountability-subsection"><h4>Your friends</h4><div id="acceptedFriendsList" class="accountability-list"><div class="accountability-placeholder">Your accepted friends will appear here.</div></div></div>
       </article>
       <article class="card accountability-card" id="studyTogetherCard">
-        <span class="accountability-status" id="studyTogetherStatus">QUICK INVITE</span>
-        <h3>📚 Study Together</h3>
-        <p>Invite an accepted friend. You each choose your own subject and timer settings.</p>
-        <div class="accountability-subsection"><h4>Incoming study invites</h4><div id="studyIncomingInvites" class="accountability-list"><div class="accountability-placeholder">No pending invites.</div></div></div>
         <section class="card study-together-live" id="studyTogetherLivePanel">
-          <div class="section-head"><div><span class="tag">LIVE PARTY</span><h2>Side-by-side study session</h2><p class="history-note">Subjects come from your existing Pomodoro subject list. Each hunter keeps independent timings.</p></div><button type="button" id="studyTogetherFullscreen" class="pomodoro-fullscreen" aria-label="Fullscreen side-by-side study view" title="Fullscreen side-by-side">⛶</button></div>
-          <div id="studyTogetherLiveContent"><div class="accountability-empty">Accept a Quick Invite to see both study sessions here.</div></div>
+          <div class="section-head"><div><span class="tag">LIVE PARTY</span><h2>Side-by-side study session</h2><p class="history-note">Subjects come from your existing Pomodoro subject list. Each hunter keeps independent timings.</p></div><div class="study-live-toolbar"><select id="studyLiveFriendSelect" aria-label="Choose friend Pomodoro to display"><option value="all">All friends</option></select><button type="button" id="studyTogetherFullscreen" class="pomodoro-fullscreen" aria-label="Fullscreen side-by-side study view" title="Fullscreen side-by-side">⛶</button></div></div>
+          <div id="studyTogetherLiveContent"><div class="accountability-empty">Choose a friend from the dropdown to see their live study session here.</div></div>
         </section>
       </article>
       <article class="card accountability-card" id="accountabilityNudgesCard">
@@ -1536,7 +1539,7 @@ body.pomodoro-fallback-active{overflow:hidden!important}
       </article>
       
     <section class="card accountability-friends-activity" id="accountabilityFriendsActivity">
-      <div class="section-head"><div><span class="tag">FRIEND ACTIVITY</span><h2>Friends' study sessions</h2><p class="history-note">See how much your friends have studied across different time periods.</p></div><button type="button" id="refreshFriendsActivityBtn">Refresh</button></div>
+      <div class="section-head"><div><span class="tag">FRIEND ACTIVITY</span><h2>Friends' study sessions</h2><p class="history-note">See how much your friends have studied across different time periods.</p></div><div class="friends-activity-toolbar"><select id="friendsActivityFriendSelect" aria-label="Choose whose study sessions to view"><option value="all">All friends</option></select><button type="button" id="refreshFriendsActivityBtn">Refresh</button></div></div>
       <div class="accountability-period-grid">
         <div class="stat-card"><small>Today</small><strong id="friendsTodayTime">0 min</strong><span id="friendsTodaySessions">0 sessions</span></div>
         <div class="stat-card"><small>This week</small><strong id="friendsWeekTime">0 min</strong><span id="friendsWeekSessions">0 sessions</span></div>
@@ -1967,8 +1970,10 @@ function renderPomodoroMirrorCard(name,subject,status,remaining,duration,isMe){
  const clock=(active||status==='paused')?formatPomodoroTime(remaining):'--:--';
  return '<article class="study-live-member"><div class="study-live-status">'+label+'</div><h3>'+studyEscape(name)+'</h3><div class="study-arc-wrap"><svg class="study-progress-arc" viewBox="0 0 120 120" aria-hidden="true"><circle class="study-arc-track" cx="60" cy="60" r="48"></circle><circle class="study-arc-value" cx="60" cy="60" r="48" stroke-dasharray="'+c.toFixed(2)+'" stroke-dashoffset="'+(c*(1-progress)).toFixed(2)+'"></circle></svg><div class="study-arc-time" '+(isMe?'id="pomodoroMirrorMyClock"':'')+'>'+clock+'</div></div><div class="study-live-meta"><span>Subject: '+studyEscape(subject||'Not selected')+'</span><span>'+ (status==='focus'?'Focus':status==='break'?'Break':'Timer')+': '+formatStudyDuration(duration)+'</span></div></article>';
 }
+let selectedLivePomodoroFriendId='all';
 function renderStudyLivePanel(){
  const host=document.getElementById('studyTogetherLiveContent');if(!host)return;
+ const select=document.getElementById('studyLiveFriendSelect');
  const myStatus=pomodoroMirrorStatus(),myDuration=(pomodoroDurations[pomodoroMode]||pomodoroDurations.focus),myRemaining=pomodoroMirrorRemaining();
  const subject=document.getElementById('pomodoroSubject')?.value||'';
  const friends=(pomodoroMirrorFriends||[]).filter(x=>x.user_id!==cloudUser?.id).map(friend=>{
@@ -1979,16 +1984,17 @@ function renderStudyLivePanel(){
   const remaining=(status==='focus'||status==='break')&&friend.phase_ends_at?Math.max(0,Math.ceil((new Date(friend.phase_ends_at).getTime()-Date.now())/1000)):Number(friend.remaining_seconds)||0;
   return {friend,status,duration,remaining};
  });
- const friendCards=friends.length?friends.map(({friend,status,duration,remaining})=>
-  renderPomodoroMirrorCard(friend.display_name||'Friend',friend.subject||'',status,remaining,duration,false)
- ).join(''):'<div class="accountability-empty">No friends connected yet. Add friends to see their live study sessions here.</div>';
- const studying=friends.filter(x=>x.status==='focus'||x.status==='break').length;
- host.innerHTML='<div class="study-live-grid">'+
-  renderPomodoroMirrorCard('You',subject,myStatus,myRemaining,myDuration,true)+
-  friendCards+
-  '</div><p class="history-note">'+(studying?studying+' friend'+(studying===1?' is':'s are')+' currently studying or on a break. ':'')+'Live status for all accepted friends appears here automatically when they use Pomodoro. Quick Invite is optional.</p>';
+ if(select){
+  select.innerHTML='<option value="all">All friends</option>'+friends.map(x=>'<option value="'+studyEscape(x.friend.user_id)+'">'+studyEscape(x.friend.display_name||'Friend')+'</option>').join('');
+  if(friends.some(x=>x.friend.user_id===selectedLivePomodoroFriendId))select.value=selectedLivePomodoroFriendId;
+  else {selectedLivePomodoroFriendId='all';select.value='all';}
+  if(!select.dataset.bound){select.dataset.bound='1';select.addEventListener('change',()=>{selectedLivePomodoroFriendId=select.value;renderStudyLivePanel();});}
+ }
+ const shown=selectedLivePomodoroFriendId==='all'?friends:friends.filter(x=>x.friend.user_id===selectedLivePomodoroFriendId);
+ const friendCards=shown.length?shown.map(({friend,status,duration,remaining})=>renderPomodoroMirrorCard(friend.display_name||'Friend',friend.subject||'',status,remaining,duration,false)).join(''):'<div class="accountability-empty">'+(friends.length?'Choose a friend to see their live Pomodoro.':'No friends connected yet. Add friends to see their live study sessions here.')+'</div>';
+ const studying=shown.filter(x=>x.status==='focus'||x.status==='break').length;
+ host.innerHTML='<div class="study-live-grid">'+renderPomodoroMirrorCard('You',subject,myStatus,myRemaining,myDuration,true)+friendCards+'</div><p class="history-note">'+(studying?studying+' selected friend'+(studying===1?' is':'s are')+' currently studying or on a break. ':'')+'Live status for accepted friends appears here automatically when they use Pomodoro. Quick Invite is optional.</p>';
 }
-
 async function publishPomodoroMirror(){
  if(!cloudClient||!cloudUser||!cloudReady)return;
  const subject=document.getElementById('pomodoroSubject')?.value||'';
@@ -2151,6 +2157,27 @@ function localPeriodStarts(){
  const month=new Date(now.getFullYear(),now.getMonth(),1);
  return {now,today,week,month};
 }
+let friendsStudyActivityRows=[],friendsActivityOptions=[];
+function renderFriendsStudyActivityRows(){
+ const host=document.getElementById('friendsActivityList');if(!host)return;
+ const select=document.getElementById('friendsActivityFriendSelect'),all=friendsStudyActivityRows;
+ if(select){
+  const current=select.value||'all',names=new Map(friendsActivityOptions);
+  all.forEach(x=>{if(!names.has(x.user_id))names.set(x.user_id,x.display_name);});
+  const options=[...names.entries()];
+  select.innerHTML='<option value="all">All friends</option>'+options.map(([id,name])=>'<option value="'+escapeHtml(id)+'">'+escapeHtml(name)+'</option>').join('');
+  select.value=options.some(([id])=>id===current)?current:'all';
+  if(!select.dataset.bound){select.dataset.bound='1';select.addEventListener('change',renderFriendsStudyActivityRows);}
+ }
+ const chosen=select?.value||'all',rows=chosen==='all'?all:all.filter(x=>x.user_id===chosen);
+ updateFriendsActivityTotals(rows);
+ const groups=new Map();rows.forEach(x=>{if(!groups.has(x.user_id))groups.set(x.user_id,{name:x.display_name,rows:[]});groups.get(x.user_id).rows.push(x);});
+ host.innerHTML=groups.size?[...groups.entries()].map(([id,g])=>{
+  const mins=g.rows.reduce((a,x)=>a+(Number(x.duration_seconds)||0),0)/60,bounds=localPeriodStarts();
+  const periodSummary=(from)=>{const matched=g.rows.filter(x=>new Date(x.ended_at)>=from),seconds=matched.reduce((a,x)=>a+(Number(x.duration_seconds)||0),0);return `${formatStudyDuration(seconds)} · ${matched.length} sessions`;};
+  return `<article class="friend-activity-card"><div class="section-head"><div><h3>${escapeHtml(g.name)}</h3><small>${g.rows.length} recorded sessions · ${Math.round(mins)} min in the last 30 days</small></div><span class="tag">FRIEND</span></div><div class="friend-period-summary"><div><small>Today</small><strong>${periodSummary(bounds.today)}</strong></div><div><small>This week</small><strong>${periodSummary(bounds.week)}</strong></div><div><small>This month</small><strong>${periodSummary(bounds.month)}</strong></div></div><div class="friend-activity-session-list">${g.rows.slice(0,8).map(x=>`<div class="friend-activity-session"><span><strong>${escapeHtml(x.subject||'Other')}</strong><small>${new Date(x.ended_at).toLocaleString()} · ${escapeHtml(x.source||'study')}</small></span><b>${formatStudyDuration(Number(x.duration_seconds)||0)}</b></div>`).join('')}${g.rows.length>8?`<small class="history-note">Showing 8 of ${g.rows.length} sessions</small>`:''}</div></article>`;
+ }).join(''):(all.length?'<div class="accountability-placeholder">No study sessions recorded for this friend in the last 30 days.</div>':'<div class="accountability-placeholder">No shared study sessions found for your friends in the last 30 days yet.</div>');
+}
 async function loadFriendsStudyActivity(){
  if(!cloudClient||!cloudUser||!cloudReady)return;
  const host=document.getElementById('friendsActivityList');if(!host)return;
@@ -2160,7 +2187,7 @@ async function loadFriendsStudyActivity(){
   const {data:links,error:linkError}=await cloudClient.from('friendships').select('user_a,user_b').or('user_a.eq.'+uid+',user_b.eq.'+uid);
   if(linkError)throw linkError;
   const ids=(links||[]).map(x=>x.user_a===uid?x.user_b:x.user_a);
-  if(!ids.length){host.innerHTML='<div class="accountability-placeholder">Add friends to see their study sessions here.</div>';updateFriendsActivityTotals([]);return;}
+  if(!ids.length){friendsStudyActivityRows=[];friendsActivityOptions=[];renderFriendsStudyActivityRows();return;}
   const since=new Date();since.setDate(1);since.setMonth(since.getMonth()-1);since.setHours(0,0,0,0);
   const [{data:rows,error:rowsError},{data:profiles,error:profileError}]=await Promise.all([
    cloudClient.from('friend_study_activity').select('user_id,session_key,subject,started_at,ended_at,duration_seconds,source').in('user_id',ids).gte('ended_at',since.toISOString()).order('ended_at',{ascending:false}).limit(2000),
@@ -2168,15 +2195,9 @@ async function loadFriendsStudyActivity(){
   ]);
   if(rowsError)throw rowsError;if(profileError)throw profileError;
   const names=new Map((profiles||[]).map(x=>[x.user_id,x.display_name||'Friend']));
-  const sessions=(rows||[]).map(x=>({...x,display_name:names.get(x.user_id)||'Friend'}));
-  updateFriendsActivityTotals(sessions);
-  const groups=new Map();sessions.forEach(x=>{if(!groups.has(x.user_id))groups.set(x.user_id,{name:x.display_name,rows:[]});groups.get(x.user_id).rows.push(x);});
-  host.innerHTML=groups.size?[...groups.entries()].map(([id,g])=>{
-   const mins=g.rows.reduce((a,x)=>a+(Number(x.duration_seconds)||0),0)/60;
-   const bounds=localPeriodStarts();
-   const periodSummary=(from)=>{const matched=g.rows.filter(x=>new Date(x.ended_at)>=from);const seconds=matched.reduce((a,x)=>a+(Number(x.duration_seconds)||0),0);return `${formatStudyDuration(seconds)} · ${matched.length} sessions`;};
-   return `<article class="friend-activity-card"><div class="section-head"><div><h3>${escapeHtml(g.name)}</h3><small>${g.rows.length} recorded sessions · ${Math.round(mins)} min in the last 30 days</small></div><span class="tag">FRIEND</span></div><div class="friend-period-summary"><div><small>Today</small><strong>${periodSummary(bounds.today)}</strong></div><div><small>This week</small><strong>${periodSummary(bounds.week)}</strong></div><div><small>This month</small><strong>${periodSummary(bounds.month)}</strong></div></div><div class="friend-activity-session-list">${g.rows.slice(0,8).map(x=>`<div class="friend-activity-session"><span><strong>${escapeHtml(x.subject||'Other')}</strong><small>${new Date(x.ended_at).toLocaleString()} · ${escapeHtml(x.source||'study')}</small></span><b>${formatStudyDuration(Number(x.duration_seconds)||0)}</b></div>`).join('')}${g.rows.length>8?`<small class="history-note">Showing 8 of ${g.rows.length} sessions</small>`:''}</div></article>`;
-  }).join(''):'<div class="accountability-placeholder">No shared study sessions found for your friends in the last 30 days yet.</div>';
+  friendsActivityOptions=[...names.entries()];
+  friendsStudyActivityRows=(rows||[]).map(x=>({...x,display_name:names.get(x.user_id)||'Friend'}));
+  renderFriendsStudyActivityRows();
  }catch(error){host.innerHTML='<div class="accountability-placeholder">Could not load friend study activity: '+escapeHtml(error.message||String(error))+'</div>';}
 }
 function updateFriendsActivityTotals(rows){
@@ -2223,7 +2244,7 @@ function renderAccountabilityOverview(){
  mirror('pomoAccTodayMinutes',today+' min');mirror('pomoAccTodaySessions',todaySessions.length);mirror('pomoAccWeekMinutes',weekly+' min');mirror('pomoAccStudyStreak',accountabilityStreak(sessions)+' days');mirror('pomoAccGoalLabel',today+' / '+goal+' min');
  const mirrorBar=document.getElementById('pomoAccGoalProgress');if(mirrorBar)mirrorBar.style.width=Math.min(100,today/goal*100)+'%';
  const mirrorBreakdown=document.getElementById('pomoAccSubjectBreakdown');if(mirrorBreakdown){const rows=Object.entries(totals).sort((a,b)=>b[1]-a[1]);mirrorBreakdown.innerHTML=rows.length?rows.map(([name,mins])=>`<div class="accountability-breakdown-row"><span>${escapeHtml(name)}</span><strong>${Math.round(mins)} min</strong></div>`).join(''):'<div class="accountability-placeholder">No completed study sessions in the last 7 days.</div>';}
- const mirrorGoal=document.getElementById('pomoAccDailyGoal');if(mirrorGoal&&document.activeElement!==mirrorGoal)mirrorGoal.value=goal;
+ const mirrorGoal=document.getElementById('pomoAccDailyGoal');if(mirrorGoal&&document.activeElement!==mirrorGoal)mirrorGoal.value=(goal/60).toString();
  const mirrorShare=document.getElementById('pomoAccShareStatus');if(mirrorShare)mirrorShare.checked=data.accountabilityPrefs?.shareStatus!==false;
 }
 function accountabilityFeedback(message,type='ok'){
@@ -2265,7 +2286,7 @@ function populateNudgeFriends(){
  if(old)target.value=old;
  const nudge=document.getElementById('sendNudgeBtn');if(nudge&&!nudge.dataset.bound){nudge.dataset.bound='1';nudge.addEventListener('click',sendAccountabilityNudge);}
  const prefs=document.getElementById('saveAccPrefsBtn');if(prefs&&!prefs.dataset.bound){prefs.dataset.bound='1';prefs.addEventListener('click',saveAccountabilityPrefs);}
- const pomoPrefs=document.getElementById('pomoSaveAccPrefsBtn');if(pomoPrefs&&!pomoPrefs.dataset.bound){pomoPrefs.dataset.bound='1';pomoPrefs.addEventListener('click',()=>{const goal=document.getElementById('pomoAccDailyGoal'),share=document.getElementById('pomoAccShareStatus'),mainGoal=document.getElementById('accDailyGoal'),mainShare=document.getElementById('accShareStatus');if(mainGoal&&goal)mainGoal.value=goal.value;if(mainShare&&share)mainShare.checked=share.checked;saveAccountabilityPrefs();const feedback=document.getElementById('pomoAccPrefsFeedback');if(feedback)feedback.textContent=document.getElementById('accPrefsFeedback')?.textContent||'Preferences saved.';});}
+ const pomoPrefs=document.getElementById('pomoSaveAccPrefsBtn');if(pomoPrefs&&!pomoPrefs.dataset.bound){pomoPrefs.dataset.bound='1';pomoPrefs.addEventListener('click',()=>{const goal=document.getElementById('pomoAccDailyGoal'),share=document.getElementById('pomoAccShareStatus'),mainGoal=document.getElementById('accDailyGoal'),mainShare=document.getElementById('accShareStatus');if(mainGoal&&goal)mainGoal.value=String(Math.round(Number(goal.value)*60));if(mainShare&&share)mainShare.checked=share.checked;saveAccountabilityPrefs();const feedback=document.getElementById('pomoAccPrefsFeedback');if(feedback)feedback.textContent=document.getElementById('accPrefsFeedback')?.textContent||'Preferences saved.';});}
 
  const nudgeList=document.getElementById('accountabilityNudgesList');if(nudgeList&&!nudgeList.dataset.bound){nudgeList.dataset.bound='1';nudgeList.dataset.bound='1';nudgeList.addEventListener('click',e=>{const b=e.target.closest('[data-nudge-read]');if(b)markAccountabilityNudgeRead(b.dataset.nudgeRead);});}
  const activityRefresh=document.getElementById('refreshFriendsActivityBtn');if(activityRefresh&&!activityRefresh.dataset.bound){activityRefresh.dataset.bound='1';activityRefresh.addEventListener('click',loadFriendsStudyActivity);}
@@ -2991,10 +3012,45 @@ function formatStudyDuration(totalSeconds){
  if(minutes)return minutes+'m'+(seconds?' '+seconds+'s':'');
  return seconds+'s';
 }
+let pomodoroStudyDayOffset=0;
+function navigatePomodoroStudyDay(direction){
+ const sessions=(Array.isArray(data.studySessions)?data.studySessions:[]).filter(x=>x&&x.completedAt&&x.source!=='habit-completion');
+ const validDates=sessions.map(x=>new Date(x.completedAt)).filter(d=>Number.isFinite(d.getTime()));
+ const today=new Date();today.setHours(0,0,0,0);
+ let oldest=today;
+ validDates.forEach(d=>{const day=new Date(d);day.setHours(0,0,0,0);if(day<oldest)oldest=day;});
+ const maxOffset=Math.max(0,Math.floor((today-oldest)/86400000));
+ pomodoroStudyDayOffset=Math.max(0,Math.min(maxOffset,pomodoroStudyDayOffset+direction));
+ renderPomodoroHistory();
+}
 function renderPomodoroHistory(){
- const history=document.getElementById('pomodoroHistory'),sessions=Array.isArray(data.studySessions)?data.studySessions:[];
+ const history=document.getElementById('pomodoroHistory'),sessions=(Array.isArray(data.studySessions)?data.studySessions:[]).filter(x=>x&&x.completedAt&&x.source!=='habit-completion');
  document.getElementById('pomodoroSessions').textContent=sessions.length;
- history.innerHTML=sessions.length?sessions.slice(-10).reverse().map(x=>'<div class="pomodoro-history-row"><strong>'+statsEscape(x.subject)+(x.finishedEarly?' · Finished early':'')+'</strong><span>'+formatStudyDuration(Math.max(0,Number(x.seconds)||Number(x.minutes||0)*60))+' · '+new Date(x.completedAt).toLocaleString()+'</span></div>').join(''):'<div class="stats-empty">No study sessions yet.</div>';
+ const selectedDate=new Date();selectedDate.setHours(0,0,0,0);selectedDate.setDate(selectedDate.getDate()-pomodoroStudyDayOffset);
+ const keyFor=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+ const selectedKey=keyFor(selectedDate),today=new Date();today.setHours(0,0,0,0);
+ const yesterday=new Date(today);yesterday.setDate(yesterday.getDate()-1);
+ const label=pomodoroStudyDayOffset===0?'Today':pomodoroStudyDayOffset===1?'Yesterday':selectedDate.toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+ const labelEl=document.getElementById('pomoStudyDayLabel');
+ if(labelEl)labelEl.textContent=label;
+ const validDates=sessions.map(x=>new Date(x.completedAt)).filter(d=>Number.isFinite(d.getTime()));
+ let oldest=today;validDates.forEach(d=>{const day=new Date(d);day.setHours(0,0,0,0);if(day<oldest)oldest=day;});
+ const maxOffset=Math.max(0,Math.floor((today-oldest)/86400000));
+ const prev=document.getElementById('pomoStudyDayPrev'),next=document.getElementById('pomoStudyDayNext');
+ if(prev)prev.disabled=pomodoroStudyDayOffset>=maxOffset;
+ if(next)next.disabled=pomodoroStudyDayOffset===0;
+ const group={subjects:{},total:0,count:0};
+ sessions.forEach(x=>{
+  const d=new Date(x.completedAt);if(!Number.isFinite(d.getTime())||keyFor(d)!==selectedKey)return;
+  const subject=String(x.subject||'Unspecified'),seconds=Math.max(0,Number(x.seconds)||Number(x.minutes||0)*60);
+  group.subjects[subject]=(group.subjects[subject]||0)+seconds;group.total+=seconds;group.count++;
+ });
+ if(group.count){
+  const subjectRows=Object.entries(group.subjects).sort((a,b)=>b[1]-a[1]).map(([name,seconds])=>'<span class="pomodoro-day-subject"><strong>'+statsEscape(name)+'</strong><b>'+formatStudyDuration(seconds)+'</b></span>').join('');
+  history.innerHTML='<div class="pomodoro-day-heading"><strong>'+label+' · '+formatStudyDuration(group.total)+' · '+group.count+' '+(group.count===1?'session':'sessions')+'</strong></div><div class="pomodoro-day-subjects">'+subjectRows+'</div>';
+ }else{
+  history.innerHTML='<div class="stats-empty">No study sessions logged for '+label.toLowerCase()+'.</div>';
+ }
  if(document.getElementById('pomoSubjectChart'))renderPomodoroStats();
 }
 function formatPomodoroTime(seconds){const m=Math.floor(seconds/60),sec=seconds%60;return String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');}
@@ -3520,6 +3576,30 @@ data=createFreshPlayerData();ensureProgress();render();renderPomodoroSubjects();
 .pomo-growth-quote{display:flex;align-items:center;justify-content:center;gap:10px;min-height:64px;margin:10px 0 14px;padding:12px 18px;text-align:center;color:#d8c9ff;font-size:clamp(15px,2vw,19px);font-weight:750;letter-spacing:.02em;text-shadow:0 2px 18px rgba(140,105,237,.28)}
 .pomo-growth-quote-mark{font-size:27px;line-height:1;color:#9878ee;opacity:.9}
 
+
+/* Match Pomodoro timer and recent-session cards to the full analytics width */
+#pomodoroPage > .pomodoro-card,
+#pomodoroPage > .pomodoro-history-card{
+  width:100%!important;
+  max-width:none!important;
+  box-sizing:border-box!important;
+  margin-left:0!important;
+  margin-right:0!important;
+}
+
+
+/* Day-by-day study summary navigation */
+.pomo-day-nav-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.pomo-day-nav{display:flex;align-items:center;gap:8px}
+.pomo-day-nav button{box-sizing:border-box!important;width:32px;height:32px;min-width:32px;padding:0!important;margin:0;border:1px solid #514675;border-radius:9px;background:#211d3a;color:#eee7ff;font-size:22px;line-height:1;cursor:pointer;display:grid;place-items:center;align-content:center;justify-content:center;text-align:center;appearance:none;-webkit-appearance:none;flex:0 0 32px}
+.pomo-day-nav button:disabled{opacity:.35;cursor:not-allowed}
+.pomo-day-nav .tag{min-width:78px;text-align:center}
+@media(max-width:520px){.pomo-day-nav-head{align-items:flex-start}.pomo-day-nav{gap:5px}.pomo-day-nav button{width:30px;height:30px;min-width:30px;flex-basis:30px;padding:0!important;font-size:20px}}
+
+/* Compact friend selectors for live Pomodoro and friend activity */
+.study-live-toolbar,.friends-activity-toolbar{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+.study-live-toolbar select,.friends-activity-toolbar select{max-width:190px;min-width:125px;padding:8px 28px 8px 10px;border:1px solid var(--line);border-radius:9px;background:#11182b;color:var(--text,#eeeaff);font:inherit;font-size:12px;min-height:36px}
+@media(max-width:620px){.study-live-toolbar,.friends-activity-toolbar{width:100%;justify-content:flex-end}.study-live-toolbar select,.friends-activity-toolbar select{max-width:180px;min-width:110px}.study-together-live .section-head,.accountability-friends-activity>.section-head{flex-wrap:wrap}}
 </style>
 
 </body>
