@@ -292,6 +292,10 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin:22px 0}
 @media(max-width:760px){.pomo-subject-visuals{grid-template-columns:1fr}.pomo-subject-pie-wrap{justify-content:flex-start;flex-wrap:wrap}.pomo-subject-pie{width:150px;height:150px;flex-basis:150px}}
 @media(max-width:440px){.pomo-chart-row{grid-template-columns:minmax(65px,95px) minmax(0,1fr) 55px;gap:7px}.pomo-subject-pie{width:130px;height:130px;flex-basis:130px}}
 
+
+.pomo-subject-heading{align-items:center;flex-wrap:wrap}.pomo-subject-filters{display:flex;gap:4px;align-items:center;padding:3px;border:1px solid rgba(167,139,250,.2);border-radius:999px;background:rgba(8,12,28,.55)}.pomo-period-btn{border:0;border-radius:999px;padding:5px 9px;background:transparent;color:var(--muted);font:inherit;font-size:11px;line-height:1.2;cursor:pointer;transition:background .15s,color .15s}.pomo-period-btn.active{background:#8c69ed;color:#fff;box-shadow:0 2px 8px rgba(140,105,237,.25)}.pomo-period-btn:focus-visible,.pomo-custom-range input:focus-visible{outline:2px solid #b8a0ff;outline-offset:2px}.pomo-custom-range{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:-2px 0 10px;font-size:11px;color:var(--muted)}.pomo-custom-range[hidden]{display:none}.pomo-custom-range label{display:flex;align-items:center;gap:5px}.pomo-custom-range input{background:#0d1225;border:1px solid rgba(167,139,250,.3);border-radius:7px;color:var(--text);padding:5px 7px;font:inherit;color-scheme:dark}.pomo-custom-range span{color:#f4b860}.pomo-subject-period-label{justify-content:flex-end;margin:0 0 7px!important}.pomo-subject-period-label .tag{font-size:10px}
+@media(max-width:500px){.pomo-subject-heading{align-items:flex-start}.pomo-subject-filters{width:100%;justify-content:space-between}.pomo-period-btn{flex:1;padding:6px 5px}.pomo-custom-range{gap:7px}.pomo-custom-range label{flex:1;min-width:120px}.pomo-custom-range input{min-width:0;width:100%}}
+
 /* Focus-time-by-subject spacing refinement */
 .pomodoro-stats-panel:has(#pomoSubjectChart){padding:16px 18px 18px;min-height:0;height:auto}
 .pomodoro-stats-panel:has(#pomoSubjectChart) .section-head{margin-bottom:12px}
@@ -1166,6 +1170,10 @@ body.pomodoro-fallback-active{overflow:hidden!important}
 [hidden]{display:none !important;}
 </style>
 
+<style id="pomodoro-accountability-additions">
+#pomodoroPage .pomo-accountability-overview,#pomodoroPage .pomo-study-preferences{max-width:100%;margin:18px 0}
+#pomodoroPage .pomo-study-preferences{min-height:260px}
+</style>
 </head>
 <body>
 <div class="auth-shell">
@@ -1181,7 +1189,7 @@ body.pomodoro-fallback-active{overflow:hidden!important}
 </div>
 <main>
   <div class="top">
-    <div><h1 class="glitch-title" data-text="ARISE">ARISE</h1><div class="sub">Small actions. Consistent days.</div></div>
+    <div><h1 class="glitch-title" data-text="ARISE">ARISE</h1><div class="sub">Stay the same . . . or grow?</div></div>
     <div class="top-actions"><div class="date" id="todayLabel"></div><div class="welcome-label" id="welcomeLabel" hidden></div><button type="button" id="profileAvatarBtn" class="profile-avatar-btn" aria-label="Open Hunter Profile" title="Hunter Profile" hidden><span id="profileAvatarInitial">H</span><img id="profileAvatarImage" alt="Profile picture" hidden></button><button type="button" id="guildBellBtn" class="guild-bell" aria-label="Open friend network" title="Friends & invitations">🔔<span id="guildBellCount" hidden>0</span></button></div>
   </div>
 
@@ -1429,14 +1437,48 @@ body.pomodoro-fallback-active{overflow:hidden!important}
       <article class="card"><div class="metric-label">Subjects studied</div><div class="metric" id="pomoSubjectCount">0</div></article>
       <article class="card"><div class="metric-label">Daily average (7 days)</div><div class="metric" id="pomoDailyAverage">0 min</div></article>
     </div>
-    <section class="card pomodoro-stats-panel"><div class="section-head"><h2>Focus time by subject</h2><span class="tag">All time</span></div><div class="pomo-subject-visuals">
+    <section class="card pomodoro-stats-panel"><div class="section-head pomo-subject-heading"><h2>Daily focus time</h2><div class="pomo-subject-filters" role="group" aria-label="Filter subject focus time"><button type="button" class="pomo-period-btn active" data-pomo-period="daily" aria-pressed="true">Daily</button><button type="button" class="pomo-period-btn" data-pomo-period="weekly" aria-pressed="false">Weekly</button><button type="button" class="pomo-period-btn" data-pomo-period="monthly" aria-pressed="false">Monthly</button><button type="button" class="pomo-period-btn" data-pomo-period="custom" aria-pressed="false">Custom</button></div></div><div class="pomo-custom-range" id="pomoSubjectCustomRange" hidden><label>From <input type="date" id="pomoSubjectDateFrom"></label><label>To <input type="date" id="pomoSubjectDateTo"></label><span id="pomoSubjectRangeFeedback" role="status"></span></div><div class="section-head pomo-subject-period-label"><span class="tag" id="pomoSubjectPeriodLabel">Today</span></div><div class="pomo-subject-visuals">
       <div id="pomoSubjectChart" class="pomo-chart"></div>
       <div class="pomo-subject-pie-wrap">
         <div id="pomoSubjectPie" class="pomo-subject-pie" role="img" aria-label="Focus time share by subject"></div>
         <div id="pomoSubjectPieLegend" class="pomo-subject-pie-legend"></div>
       </div>
     </div></section>
-    <section class="card pomodoro-stats-panel"><div class="section-head"><h2>Daily focus time</h2><span class="tag">Last 7 days</span></div><div id="pomoDailyChart" class="pomo-daily-chart"></div></section>
+    
+
+    <section class="card accountability-overview pomo-accountability-overview" id="pomoStudyDashboard">
+      <div class="section-head"><div><span class="tag">HUNTER STATUS</span><h2>Your study dashboard</h2><p class="history-note">A live snapshot of your focus, consistency and guild activity.</p></div><span class="accountability-status">ONLINE</span></div>
+      <div class="accountability-stats-grid">
+        <div class="stat-card"><small>Today focused</small><strong id="pomoAccTodayMinutes">0 min</strong></div>
+        <div class="stat-card"><small>Sessions today</small><strong id="pomoAccTodaySessions">0</strong></div>
+        <div class="stat-card"><small>Last 7 days</small><strong id="pomoAccWeekMinutes">0 min</strong></div>
+        <div class="stat-card"><small>Study streak</small><strong id="pomoAccStudyStreak">—</strong></div>
+      </div>
+      <div class="accountability-progress"><div class="section-head"><strong>Daily study goal</strong><span id="pomoAccGoalLabel">0 / 120 min</span></div><div class="progress-track"><span id="pomoAccGoalProgress" style="width:0%"></span></div></div>
+      <div class="accountability-subsection"><div class="section-head"><h4>Study time by subject</h4><span class="tag">7 DAYS</span></div><div id="pomoAccSubjectBreakdown" class="accountability-breakdown"><div class="accountability-placeholder">Your study activity will appear here.</div></div></div>
+    </section>
+    <article class="card accountability-card pomo-study-preferences" id="pomoStudyPreferences">
+      <span class="accountability-status">YOUR GUILD PROFILE</span><h3>⚙️ Study preferences</h3>
+      <p>Set the daily study target and choose what friends can see.</p>
+      <label for="pomoAccDailyGoal">Daily study goal (minutes)</label><input id="pomoAccDailyGoal" type="number" min="15" max="1440" step="15" value="120">
+      <label class="accountability-toggle"><input id="pomoAccShareStatus" type="checkbox" checked> Share my live study status with friends</label>
+      <button type="button" class="primary" id="pomoSaveAccPrefsBtn">Save preferences</button>
+      <div id="pomoAccPrefsFeedback" class="accountability-feedback" role="status"></div>
+    </article>
+
+    <section class="card day24-panel" id="pomo24HourPanel">
+      <div class="section-head day24-heading">
+        <div><span class="tag">YOUR DAY · 24 HOURS</span><h2>Daily time breakdown</h2><p class="history-note">See how your day is divided between study subjects and wasted time.</p></div>
+        <span class="tag" id="pomo24DateLabel">Today</span>
+      </div>
+      <div class="day24-total-row"><strong id="pomo24StudyTotal">0h studied</strong><span id="pomo24WastedTotal">24h wasted</span></div>
+      <div class="day24-track" id="pomo24Track" role="img" aria-label="24-hour daily time breakdown">
+        <div class="day24-segment wasted" style="width:100%"></div>
+      </div>
+      <div class="day24-legend" id="pomo24Legend"><span><i class="day24-dot wasted"></i>Wasted · 24h</span></div>
+      <p class="day24-note">“Wasted” means no study session was logged for that time. It does not automatically mean the time was wasted.</p>
+    </section>
+
 
     </section>
   </section>
@@ -1452,6 +1494,8 @@ body.pomodoro-fallback-active{overflow:hidden!important}
       <h2>NO HUNTER GRINDS ALONE.</h2>
       <p>Build a small study squad, join focused sessions, message friends and share your screen when you choose.</p>
     </section>
+    
+
     <div class="accountability-grid">
       <article class="card accountability-card" id="accountabilityFriendsCard">
         <span class="accountability-status" id="friendsBackendStatus">CONNECTING</span>
@@ -1482,6 +1526,25 @@ body.pomodoro-fallback-active{overflow:hidden!important}
           <div id="studyTogetherLiveContent"><div class="accountability-empty">Accept a Quick Invite to see both study sessions here.</div></div>
         </section>
       </article>
+      <article class="card accountability-card" id="accountabilityNudgesCard">
+        <span class="accountability-status">GUILD SUPPORT</span><h3>🔔 Nudges & quick reactions</h3>
+        <p>Send a short reminder to an accepted friend when they need a push.</p>
+        <label for="nudgeFriendSelect">Send to</label><select id="nudgeFriendSelect"><option value="">Select a friend</option></select>
+        <div class="accountability-inline-form"><input id="nudgeMessageInput" maxlength="240" placeholder="Time to study!"><button type="button" class="primary" id="sendNudgeBtn">Nudge</button></div>
+        <div id="nudgeFeedback" class="accountability-feedback" role="status"></div>
+        <div class="accountability-subsection"><h4>Recent reminders</h4><div id="accountabilityNudgesList" class="accountability-list"><div class="accountability-placeholder">No reminders loaded.</div></div></div>
+      </article>
+      
+    <section class="card accountability-friends-activity" id="accountabilityFriendsActivity">
+      <div class="section-head"><div><span class="tag">FRIEND ACTIVITY</span><h2>Friends' study sessions</h2><p class="history-note">See how much your friends have studied across different time periods.</p></div><button type="button" id="refreshFriendsActivityBtn">Refresh</button></div>
+      <div class="accountability-period-grid">
+        <div class="stat-card"><small>Today</small><strong id="friendsTodayTime">0 min</strong><span id="friendsTodaySessions">0 sessions</span></div>
+        <div class="stat-card"><small>This week</small><strong id="friendsWeekTime">0 min</strong><span id="friendsWeekSessions">0 sessions</span></div>
+        <div class="stat-card"><small>This month</small><strong id="friendsMonthTime">0 min</strong><span id="friendsMonthSessions">0 sessions</span></div>
+      </div>
+      <div id="friendsActivityList" class="accountability-friends-activity-list"><div class="accountability-placeholder">Friend study activity will appear here after they sync their sessions.</div></div>
+      <p class="history-note">Only completed sessions recorded after this feature is enabled, or sessions synced from a friend's device, will be visible. Friends must be connected.</p>
+    </section>
       <article class="card accountability-card accountability-wide" id="guildChatCard">
         <span class="accountability-status" id="guildChatStatus">SIGN IN TO CHAT</span>
         <h3>💬 Guild chat</h3>
@@ -1607,6 +1670,7 @@ function renderAcceptedFriends(rows){
   if(rows.some(r=>r.user_id===previous))select.value=previous;
   updateGuildChatControls();
  }
+ populateNudgeFriends();
 }
 async function loadAccountabilityFriends(){
  if(!cloudClient||!cloudUser||!cloudReady)return;
@@ -1650,6 +1714,7 @@ async function loadAccountabilityFriends(){
   friends=(links||[]).map(x=>{const id=x.user_a===uid?x.user_b:x.user_a;return {user_id:id,display_name:names.get(id)||'Hunter',created_at:x.created_at};});
  }
  renderAcceptedFriends(friends);
+ void loadFriendsStudyActivity();
  setFriendsFeedback('Your invite code is ready. Share it with a friend to connect.','ok');
 }
 async function sendFriendRequest(){
@@ -1900,21 +1965,28 @@ function renderPomodoroMirrorCard(name,subject,status,remaining,duration,isMe){
  const progress=active?Math.max(0,Math.min(1,(duration-remaining)/Math.max(1,duration))):0;
  const c=2*Math.PI*48;
  const clock=(active||status==='paused')?formatPomodoroTime(remaining):'--:--';
- return '<article class="study-live-member"><div class="study-live-status">'+label+'</div><h3>'+studyEscape(name)+'</h3><div class="study-arc-wrap"><svg class="study-progress-arc" viewBox="0 0 120 120" aria-hidden="true"><circle class="study-arc-track" cx="60" cy="60" r="48"></circle><circle class="study-arc-value" cx="60" cy="60" r="48" stroke-dasharray="'+c.toFixed(2)+'" stroke-dashoffset="'+(c*(1-progress)).toFixed(2)+'"></circle></svg><div class="study-arc-time" '+(isMe?'id="pomodoroMirrorMyClock"':'id="pomodoroMirrorFriendClock"')+'>'+clock+'</div></div><div class="study-live-meta"><span>Subject: '+studyEscape(subject||'Not selected')+'</span><span>'+ (status==='focus'?'Focus':status==='break'?'Break':'Timer')+': '+formatStudyDuration(duration)+'</span></div></article>';
+ return '<article class="study-live-member"><div class="study-live-status">'+label+'</div><h3>'+studyEscape(name)+'</h3><div class="study-arc-wrap"><svg class="study-progress-arc" viewBox="0 0 120 120" aria-hidden="true"><circle class="study-arc-track" cx="60" cy="60" r="48"></circle><circle class="study-arc-value" cx="60" cy="60" r="48" stroke-dasharray="'+c.toFixed(2)+'" stroke-dashoffset="'+(c*(1-progress)).toFixed(2)+'"></circle></svg><div class="study-arc-time" '+(isMe?'id="pomodoroMirrorMyClock"':'')+'>'+clock+'</div></div><div class="study-live-meta"><span>Subject: '+studyEscape(subject||'Not selected')+'</span><span>'+ (status==='focus'?'Focus':status==='break'?'Break':'Timer')+': '+formatStudyDuration(duration)+'</span></div></article>';
 }
 function renderStudyLivePanel(){
  const host=document.getElementById('studyTogetherLiveContent');if(!host)return;
  const myStatus=pomodoroMirrorStatus(),myDuration=(pomodoroDurations[pomodoroMode]||pomodoroDurations.focus),myRemaining=pomodoroMirrorRemaining();
  const subject=document.getElementById('pomodoroSubject')?.value||'';
- const friend=(pomodoroMirrorFriends||[]).filter(x=>x.user_id!==cloudUser?.id).sort((a,b)=>((b.status==='focus'||b.status==='break')?1:0)-((a.status==='focus'||a.status==='break')?1:0))[0];
- let friendStatus=friend?.status||'idle';
- if(friend&&Date.now()-new Date(friend.updated_at||0).getTime()>90000&&(friendStatus==='focus'||friendStatus==='break'||friendStatus==='paused'))friendStatus='offline';
- const friendDuration=Number(friend?.duration_seconds)||1500;
- const friendRemaining=(friendStatus==='focus'||friendStatus==='break')&&friend?.phase_ends_at?Math.max(0,Math.ceil((new Date(friend.phase_ends_at).getTime()-Date.now())/1000)):Number(friend?.remaining_seconds)||0;
+ const friends=(pomodoroMirrorFriends||[]).filter(x=>x.user_id!==cloudUser?.id).map(friend=>{
+  let status=friend.status||'idle';
+  const stale=Date.now()-new Date(friend.updated_at||0).getTime()>90000;
+  if(stale&&(status==='focus'||status==='break'||status==='paused'))status='offline';
+  const duration=Number(friend.duration_seconds)||1500;
+  const remaining=(status==='focus'||status==='break')&&friend.phase_ends_at?Math.max(0,Math.ceil((new Date(friend.phase_ends_at).getTime()-Date.now())/1000)):Number(friend.remaining_seconds)||0;
+  return {friend,status,duration,remaining};
+ });
+ const friendCards=friends.length?friends.map(({friend,status,duration,remaining})=>
+  renderPomodoroMirrorCard(friend.display_name||'Friend',friend.subject||'',status,remaining,duration,false)
+ ).join(''):'<div class="accountability-empty">No friends connected yet. Add friends to see their live study sessions here.</div>';
+ const studying=friends.filter(x=>x.status==='focus'||x.status==='break').length;
  host.innerHTML='<div class="study-live-grid">'+
   renderPomodoroMirrorCard('You',subject,myStatus,myRemaining,myDuration,true)+
-  renderPomodoroMirrorCard(friend?.display_name||'Friend',friend?.subject||'',friendStatus,friendRemaining,friendDuration,false)+
-  '</div><p class="history-note">'+(friend?'Live view of your normal Pomodoro and your friend’s normal Pomodoro. Neither timer depends on a Quick Invite.':'Your normal Pomodoro appears here automatically. When a friend starts their Pomodoro, their live status appears on the right. Quick Invite is optional.')+'</p>';
+  friendCards+
+  '</div><p class="history-note">'+(studying?studying+' friend'+(studying===1?' is':'s are')+' currently studying or on a break. ':'')+'Live status for all accepted friends appears here automatically when they use Pomodoro. Quick Invite is optional.</p>';
 }
 
 async function publishPomodoroMirror(){
@@ -1997,6 +2069,7 @@ async function recordStudyTogetherFocus(sessionId,mine,endedAt){
  if(!logged||!logged.length)return;
  const item={id,subject:mine.subject,completedAt:new Date(endedAt).toISOString(),minutes:Math.round(seconds/60*10)/10,seconds,source:'study-together'};
  data.studySessions.push(item);
+ void publishFriendStudySession(item);
  const linkedHabit=syncPomodoroToStudyHabit(mine.subject,seconds,item.completedAt,item.id);
  save();renderPomodoroHistory();renderPomodoroStats();
  studyFeedback('Saved '+formatStudyDuration(seconds)+' for '+mine.subject+(linkedHabit?' · '+linkedHabit+' habit updated.':'. Add a measurable Study habit in minutes or hours to sync habit progress.'),'ok');
@@ -2052,6 +2125,152 @@ function initAccountabilityUI(){
  if(studyIncoming&&!studyIncoming.dataset.bound){studyIncoming.dataset.bound='1';studyIncoming.addEventListener('click',e=>{const btn=e.target.closest('button[data-study-response]');if(btn)respondStudyInvite(btn.dataset.studyId,btn.dataset.studyResponse);});}
 }
 
+
+
+// Friends' historical study activity is shared through a dedicated, friend-readable table.
+function studySessionToSharedRow(session){
+ const ended=new Date(session.completedAt||Date.now());
+ const seconds=Math.max(0,Number(session.seconds)||Number(session.minutes||0)*60);
+ return {user_id:cloudUser.id,session_key:String(session.id||('legacy:'+ended.toISOString()+':'+(session.subject||'study'))),subject:String(session.subject||'Other').slice(0,80),started_at:new Date(ended.getTime()-seconds*1000).toISOString(),ended_at:ended.toISOString(),duration_seconds:seconds,source:session.source==='study-together'?'study-together':'pomodoro'};
+}
+async function publishFriendStudySession(session){
+ if(!cloudClient||!cloudUser||!cloudReady||!session)return;
+ const row=studySessionToSharedRow(session);
+ if(row.duration_seconds<1)return;
+ const {error}=await cloudClient.from('friend_study_activity').upsert(row,{onConflict:'user_id,session_key',ignoreDuplicates:true});
+ if(error)console.warn('Could not share friend study activity:',error.message);
+}
+async function backfillFriendStudyActivity(){
+ if(!cloudClient||!cloudUser||!cloudReady)return;
+ const sessions=Array.isArray(data.studySessions)?data.studySessions:[];
+ for(const session of sessions)await publishFriendStudySession(session);
+}
+function localPeriodStarts(){
+ const now=new Date(),today=new Date(now);today.setHours(0,0,0,0);
+ const week=new Date(today);week.setDate(week.getDate()-((week.getDay()+6)%7));
+ const month=new Date(now.getFullYear(),now.getMonth(),1);
+ return {now,today,week,month};
+}
+async function loadFriendsStudyActivity(){
+ if(!cloudClient||!cloudUser||!cloudReady)return;
+ const host=document.getElementById('friendsActivityList');if(!host)return;
+ host.innerHTML='<div class="accountability-placeholder">Loading friends’ study activity…</div>';
+ try{
+  const uid=cloudUser.id;
+  const {data:links,error:linkError}=await cloudClient.from('friendships').select('user_a,user_b').or('user_a.eq.'+uid+',user_b.eq.'+uid);
+  if(linkError)throw linkError;
+  const ids=(links||[]).map(x=>x.user_a===uid?x.user_b:x.user_a);
+  if(!ids.length){host.innerHTML='<div class="accountability-placeholder">Add friends to see their study sessions here.</div>';updateFriendsActivityTotals([]);return;}
+  const since=new Date();since.setDate(1);since.setMonth(since.getMonth()-1);since.setHours(0,0,0,0);
+  const [{data:rows,error:rowsError},{data:profiles,error:profileError}]=await Promise.all([
+   cloudClient.from('friend_study_activity').select('user_id,session_key,subject,started_at,ended_at,duration_seconds,source').in('user_id',ids).gte('ended_at',since.toISOString()).order('ended_at',{ascending:false}).limit(2000),
+   cloudClient.from('hunter_profiles').select('user_id,display_name').in('user_id',ids)
+  ]);
+  if(rowsError)throw rowsError;if(profileError)throw profileError;
+  const names=new Map((profiles||[]).map(x=>[x.user_id,x.display_name||'Friend']));
+  const sessions=(rows||[]).map(x=>({...x,display_name:names.get(x.user_id)||'Friend'}));
+  updateFriendsActivityTotals(sessions);
+  const groups=new Map();sessions.forEach(x=>{if(!groups.has(x.user_id))groups.set(x.user_id,{name:x.display_name,rows:[]});groups.get(x.user_id).rows.push(x);});
+  host.innerHTML=groups.size?[...groups.entries()].map(([id,g])=>{
+   const mins=g.rows.reduce((a,x)=>a+(Number(x.duration_seconds)||0),0)/60;
+   const bounds=localPeriodStarts();
+   const periodSummary=(from)=>{const matched=g.rows.filter(x=>new Date(x.ended_at)>=from);const seconds=matched.reduce((a,x)=>a+(Number(x.duration_seconds)||0),0);return `${formatStudyDuration(seconds)} · ${matched.length} sessions`;};
+   return `<article class="friend-activity-card"><div class="section-head"><div><h3>${escapeHtml(g.name)}</h3><small>${g.rows.length} recorded sessions · ${Math.round(mins)} min in the last 30 days</small></div><span class="tag">FRIEND</span></div><div class="friend-period-summary"><div><small>Today</small><strong>${periodSummary(bounds.today)}</strong></div><div><small>This week</small><strong>${periodSummary(bounds.week)}</strong></div><div><small>This month</small><strong>${periodSummary(bounds.month)}</strong></div></div><div class="friend-activity-session-list">${g.rows.slice(0,8).map(x=>`<div class="friend-activity-session"><span><strong>${escapeHtml(x.subject||'Other')}</strong><small>${new Date(x.ended_at).toLocaleString()} · ${escapeHtml(x.source||'study')}</small></span><b>${formatStudyDuration(Number(x.duration_seconds)||0)}</b></div>`).join('')}${g.rows.length>8?`<small class="history-note">Showing 8 of ${g.rows.length} sessions</small>`:''}</div></article>`;
+  }).join(''):'<div class="accountability-placeholder">No shared study sessions found for your friends in the last 30 days yet.</div>';
+ }catch(error){host.innerHTML='<div class="accountability-placeholder">Could not load friend study activity: '+escapeHtml(error.message||String(error))+'</div>';}
+}
+function updateFriendsActivityTotals(rows){
+ const {today,week,month}=localPeriodStarts();
+ const stats={today:{seconds:0,count:0},week:{seconds:0,count:0},month:{seconds:0,count:0}};
+ (rows||[]).forEach(x=>{const t=new Date(x.ended_at).getTime(),seconds=Number(x.duration_seconds)||0;
+  ['today','week','month'].forEach(k=>{const start=k==='today'?today:k==='week'?week:month;if(t>=start.getTime()){stats[k].seconds+=seconds;stats[k].count++;}});
+ });
+ const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+ ['today','week','month'].forEach(k=>{set('friends'+k[0].toUpperCase()+k.slice(1)+'Time',formatStudyDuration(stats[k].seconds));set('friends'+k[0].toUpperCase()+k.slice(1)+'Sessions',stats[k].count+' sessions');});
+}
+
+// Accountability dashboard: uses the existing Shadow Hunter study log and guild tables.
+function accountabilityDateKey(d){return new Date(d).toLocaleDateString('en-CA');}
+function accountabilitySessions(){
+ return Array.isArray(data.studySessions)?data.studySessions.filter(x=>x&&x.completedAt):[];
+}
+function accountabilityMinutes(sessions,from,to){
+ return Math.round(sessions.filter(x=>{const t=new Date(x.completedAt).getTime();return t>=from.getTime()&&t<to.getTime();}).reduce((a,x)=>a+(Number(x.seconds)||Number(x.minutes||0)*60),0)/60);
+}
+function accountabilityStreak(sessions){
+ const days=new Set(sessions.map(x=>accountabilityDateKey(x.completedAt)));
+ let d=new Date();d.setHours(0,0,0,0);let key=accountabilityDateKey(d);
+ if(!days.has(key)){d.setDate(d.getDate()-1);key=accountabilityDateKey(d);if(!days.has(key))return 0;}
+ let count=0;while(days.has(accountabilityDateKey(d))){count++;d.setDate(d.getDate()-1);}return count;
+}
+function renderAccountabilityOverview(){
+ const sessions=accountabilitySessions(),now=new Date(),start=new Date(now);start.setHours(0,0,0,0);
+ const week=new Date(start);week.setDate(week.getDate()-6);
+ const todaySessions=sessions.filter(x=>accountabilityDateKey(x.completedAt)===accountabilityDateKey(now));
+ const today=accountabilityMinutes(sessions,start,new Date(start.getTime()+86400000));
+ const weekly=accountabilityMinutes(sessions,week,new Date(now.getTime()+1));
+ const goal=Math.max(15,Math.min(1440,Number(data.accountabilityPrefs?.dailyGoal)||120));
+ const set=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=value;};
+ set('accTodayMinutes',today+' min');set('accTodaySessions',todaySessions.length);set('accWeekMinutes',weekly+' min');set('accStudyStreak',accountabilityStreak(sessions)+' days');
+ set('accGoalLabel',today+' / '+goal+' min');
+ const bar=document.getElementById('accGoalProgress');if(bar)bar.style.width=Math.min(100,today/goal*100)+'%';
+ set('accountabilityWelcome',(data.profile?.name||data.playerName||'Hunter')+' · Study dashboard');
+ const totals={};sessions.filter(x=>new Date(x.completedAt)>=week).forEach(x=>{const k=x.subject||'Other';totals[k]=(totals[k]||0)+(Number(x.seconds)||Number(x.minutes||0)*60)/60;});
+ const target=document.getElementById('accSubjectBreakdown');if(target){const rows=Object.entries(totals).sort((a,b)=>b[1]-a[1]);target.innerHTML=rows.length?rows.map(([name,mins])=>`<div class="accountability-breakdown-row"><span>${escapeHtml(name)}</span><strong>${Math.round(mins)} min</strong></div>`).join(''):'<div class="accountability-placeholder">No completed study sessions in the last 7 days.</div>';}
+ const goalInput=document.getElementById('accDailyGoal');if(goalInput&&document.activeElement!==goalInput)goalInput.value=goal;
+ const share=document.getElementById('accShareStatus');if(share)share.checked=data.accountabilityPrefs?.shareStatus!==false;
+ const mirror=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=value;};
+ mirror('pomoAccTodayMinutes',today+' min');mirror('pomoAccTodaySessions',todaySessions.length);mirror('pomoAccWeekMinutes',weekly+' min');mirror('pomoAccStudyStreak',accountabilityStreak(sessions)+' days');mirror('pomoAccGoalLabel',today+' / '+goal+' min');
+ const mirrorBar=document.getElementById('pomoAccGoalProgress');if(mirrorBar)mirrorBar.style.width=Math.min(100,today/goal*100)+'%';
+ const mirrorBreakdown=document.getElementById('pomoAccSubjectBreakdown');if(mirrorBreakdown){const rows=Object.entries(totals).sort((a,b)=>b[1]-a[1]);mirrorBreakdown.innerHTML=rows.length?rows.map(([name,mins])=>`<div class="accountability-breakdown-row"><span>${escapeHtml(name)}</span><strong>${Math.round(mins)} min</strong></div>`).join(''):'<div class="accountability-placeholder">No completed study sessions in the last 7 days.</div>';}
+ const mirrorGoal=document.getElementById('pomoAccDailyGoal');if(mirrorGoal&&document.activeElement!==mirrorGoal)mirrorGoal.value=goal;
+ const mirrorShare=document.getElementById('pomoAccShareStatus');if(mirrorShare)mirrorShare.checked=data.accountabilityPrefs?.shareStatus!==false;
+}
+function accountabilityFeedback(message,type='ok'){
+ const el=document.getElementById('nudgeFeedback');if(el){el.textContent=message;el.dataset.type=type;}
+}
+async function sendAccountabilityNudge(){
+ const friend=document.getElementById('nudgeFriendSelect')?.value;
+ const message=(document.getElementById('nudgeMessageInput')?.value||'Time to study!').trim();
+ if(!friend){accountabilityFeedback('Choose a friend first.','error');return;}
+ if(!cloudClient||!cloudUser){accountabilityFeedback('Sign in to send reminders.','error');return;}
+ const {error}=await cloudClient.from('accountability_reminders').insert({sender_id:cloudUser.id,recipient_id:friend,message});
+ if(error){accountabilityFeedback('Reminder failed: '+error.message,'error');return;}
+ const input=document.getElementById('nudgeMessageInput');if(input)input.value='';
+ accountabilityFeedback('Reminder sent.','ok');await loadAccountabilityNudges();
+}
+async function loadAccountabilityNudges(){
+ if(!cloudClient||!cloudUser)return;
+ const {data:rows,error}=await cloudClient.from('accountability_reminders').select('id,sender_id,recipient_id,message,read_at,created_at').or('sender_id.eq.'+cloudUser.id+',recipient_id.eq.'+cloudUser.id).order('created_at',{ascending:false}).limit(12);
+ if(error){console.warn('Reminder load failed:',error.message);return;}
+ const ids=[...new Set((rows||[]).flatMap(x=>[x.sender_id,x.recipient_id]))].filter(x=>x!==cloudUser.id);
+ let names=new Map();if(ids.length){const {data:profiles}=await cloudClient.from('hunter_profiles').select('user_id,display_name').in('user_id',ids);names=new Map((profiles||[]).map(x=>[x.user_id,x.display_name||'Friend']));}
+ const el=document.getElementById('accountabilityNudgesList');if(!el)return;
+ el.innerHTML=(rows||[]).length?rows.map(x=>{const incoming=x.recipient_id===cloudUser.id;return `<div class="accountability-list-row"><span><strong>${incoming?'From '+escapeHtml(names.get(x.sender_id)||'Friend'):'To '+escapeHtml(names.get(x.recipient_id)||'Friend')}</strong><small>${escapeHtml(x.message)} · ${new Date(x.created_at).toLocaleString()}</small></span>${incoming&&!x.read_at?`<button type="button" data-nudge-read="${x.id}">Mark read</button>`:''}</div>`;}).join(''):'<div class="accountability-placeholder">No reminders yet.</div>';
+}
+async function markAccountabilityNudgeRead(id){
+ const {error}=await cloudClient.from('accountability_reminders').update({read_at:new Date().toISOString()}).eq('id',id).eq('recipient_id',cloudUser.id);
+ if(error){accountabilityFeedback('Could not mark reminder read: '+error.message,'error');return;}await loadAccountabilityNudges();
+}
+async function saveAccountabilityPrefs(){
+ const goal=Number(document.getElementById('accDailyGoal')?.value),share=!!document.getElementById('accShareStatus')?.checked;
+ if(!Number.isInteger(goal)||goal<15||goal>1440){document.getElementById('accPrefsFeedback').textContent='Enter a goal between 15 and 1440 minutes.';return;}
+ data.accountabilityPrefs={dailyGoal:goal,shareStatus:share};save();
+ const el=document.getElementById('accPrefsFeedback');if(el)el.textContent='Preferences saved on this device.';
+ renderAccountabilityOverview();
+}
+function populateNudgeFriends(){
+ const source=document.getElementById('chatFriendSelect'),target=document.getElementById('nudgeFriendSelect');if(!source||!target)return;
+ const old=target.value;target.innerHTML='<option value="">Select a friend</option>'+Array.from(source.options).filter(o=>o.value).map(o=>`<option value="${o.value}">${escapeHtml(o.textContent)}</option>`).join('');
+ if(old)target.value=old;
+ const nudge=document.getElementById('sendNudgeBtn');if(nudge&&!nudge.dataset.bound){nudge.dataset.bound='1';nudge.addEventListener('click',sendAccountabilityNudge);}
+ const prefs=document.getElementById('saveAccPrefsBtn');if(prefs&&!prefs.dataset.bound){prefs.dataset.bound='1';prefs.addEventListener('click',saveAccountabilityPrefs);}
+ const pomoPrefs=document.getElementById('pomoSaveAccPrefsBtn');if(pomoPrefs&&!pomoPrefs.dataset.bound){pomoPrefs.dataset.bound='1';pomoPrefs.addEventListener('click',()=>{const goal=document.getElementById('pomoAccDailyGoal'),share=document.getElementById('pomoAccShareStatus'),mainGoal=document.getElementById('accDailyGoal'),mainShare=document.getElementById('accShareStatus');if(mainGoal&&goal)mainGoal.value=goal.value;if(mainShare&&share)mainShare.checked=share.checked;saveAccountabilityPrefs();const feedback=document.getElementById('pomoAccPrefsFeedback');if(feedback)feedback.textContent=document.getElementById('accPrefsFeedback')?.textContent||'Preferences saved.';});}
+
+ const nudgeList=document.getElementById('accountabilityNudgesList');if(nudgeList&&!nudgeList.dataset.bound){nudgeList.dataset.bound='1';nudgeList.dataset.bound='1';nudgeList.addEventListener('click',e=>{const b=e.target.closest('[data-nudge-read]');if(b)markAccountabilityNudgeRead(b.dataset.nudgeRead);});}
+ const activityRefresh=document.getElementById('refreshFriendsActivityBtn');if(activityRefresh&&!activityRefresh.dataset.bound){activityRefresh.dataset.bound='1';activityRefresh.addEventListener('click',loadFriendsStudyActivity);}
+}
+
 async function refreshFromCloud(){
  if(!cloudClient||!cloudUser||!cloudReady)return;
  const targetUserId=cloudUser.id;
@@ -2105,6 +2324,7 @@ async function syncFromCloud(user){
  renderPomodoroHistory();
  initAccountabilityUI();
  await loadAccountabilityFriends();
+ populateNudgeFriends();renderAccountabilityOverview();await loadAccountabilityNudges();await backfillFriendStudyActivity();await loadFriendsStudyActivity();
  initGuildChatUI();
  subscribeGuildChat();
  initAccountabilityUI();
@@ -2848,6 +3068,7 @@ function tickPomodoro(){
    data.studySessions=Array.isArray(data.studySessions)?data.studySessions:[];
    const session={id:newId(),subject,completedAt:new Date().toISOString(),minutes:25,seconds:1500};
    data.studySessions.push(session);
+   void publishFriendStudySession(session);
    const linkedHabit=syncPomodoroToStudyHabit(subject,1500,session.completedAt,session.id);
    save();renderPomodoroHistory();
    document.getElementById('pomodoroStatus').textContent=linkedHabit?'Focus session complete. '+linkedHabit+' habit updated. Take a break.':'Focus session complete. Add a measurable Study habit (minutes or hours) to sync progress.';
@@ -2908,6 +3129,7 @@ document.getElementById('pomodoroFinishEarly').addEventListener('click',()=>{
  data.studySessions=Array.isArray(data.studySessions)?data.studySessions:[];
  const session={id:newId(),subject,completedAt:new Date().toISOString(),minutes:Math.round(elapsedSeconds/60*10)/10,seconds:elapsedSeconds,finishedEarly:true};
  data.studySessions.push(session);
+ void publishFriendStudySession(session);
  const linkedHabit=syncPomodoroToStudyHabit(subject,elapsedSeconds,session.completedAt,session.id);
  save();renderPomodoroHistory();
  document.getElementById('pomodoroStatus').textContent=linkedHabit?'Session saved. '+linkedHabit+' habit updated with actual study time.':'Session saved. Add a measurable Study habit (minutes or hours) to sync progress.';
@@ -2918,12 +3140,38 @@ document.getElementById('pomodoroFinishEarly').addEventListener('click',()=>{
 document.getElementById('pomodoroReset').addEventListener('click',()=>setPomodoroMode(pomodoroMode));
 
 
+let pomoSubjectPeriod='daily';
+function pomoSubjectDateWindow(){
+ const now=new Date(),start=new Date(now),end=new Date(now);start.setHours(0,0,0,0);end.setHours(23,59,59,999);
+ if(pomoSubjectPeriod==='weekly'){const day=(start.getDay()+6)%7;start.setDate(start.getDate()-day);}
+ else if(pomoSubjectPeriod==='monthly')start.setDate(1);
+ else if(pomoSubjectPeriod==='custom'){
+  const from=document.getElementById('pomoSubjectDateFrom')?.value,to=document.getElementById('pomoSubjectDateTo')?.value;
+  if(!from||!to)return {start:null,end:null,label:'Choose dates'};
+  const a=new Date(from+'T00:00:00'),b=new Date(to+'T23:59:59.999');
+  if(Number.isNaN(a.getTime())||Number.isNaN(b.getTime())||a>b)return {start:null,end:null,label:'Invalid date range'};
+  return {start:a,end:b,label:a.toLocaleDateString()+' – '+b.toLocaleDateString()};
+ }
+ const labels={daily:'Today',weekly:'This week',monthly:'This month'};
+ return {start,end,label:labels[pomoSubjectPeriod]||'Today'};
+}
+function setPomoSubjectPeriod(period){
+ pomoSubjectPeriod=period;
+ document.querySelectorAll('[data-pomo-period]').forEach(btn=>{const active=btn.dataset.pomoPeriod===period;btn.classList.toggle('active',active);btn.setAttribute('aria-pressed',String(active));});
+ const range=document.getElementById('pomoSubjectCustomRange');if(range)range.hidden=period!=='custom';
+ renderPomodoroStats();
+}
+document.querySelectorAll('[data-pomo-period]').forEach(btn=>btn.addEventListener('click',()=>setPomoSubjectPeriod(btn.dataset.pomoPeriod)));
+['pomoSubjectDateFrom','pomoSubjectDateTo'].forEach(id=>document.getElementById(id)?.addEventListener('change',()=>renderPomodoroStats()));
 function renderPomodoroStats(){
  const sessions=Array.isArray(data.studySessions)?data.studySessions:[];
  const secondsOf=x=>Math.max(0,Number(x.seconds)||Number(x.minutes||0)*60);
- const totalSeconds=sessions.reduce((sum,x)=>sum+secondsOf(x),0),subjects={};
- sessions.forEach(x=>{const name=String(x.subject||'Unspecified');subjects[name]=(subjects[name]||0)+secondsOf(x);});
- const entries=Object.entries(subjects).sort((a,b)=>b[1]-a[1]);
+ const totalSeconds=sessions.reduce((sum,x)=>sum+secondsOf(x),0);
+ const window=pomoSubjectDateWindow(),filteredSessions=window.start&&window.end?sessions.filter(x=>{const d=new Date(x.completedAt);return !Number.isNaN(d.getTime())&&d>=window.start&&d<=window.end;}):[];
+ const subjects={};filteredSessions.forEach(x=>{const name=String(x.subject||'Unspecified');subjects[name]=(subjects[name]||0)+secondsOf(x);});
+ const entries=Object.entries(subjects).sort((a,b)=>b[1]-a[1]),filteredTotal=entries.reduce((sum,x)=>sum+x[1],0);
+ const periodLabel=document.getElementById('pomoSubjectPeriodLabel');if(periodLabel)periodLabel.textContent=window.label;
+ const rangeFeedback=document.getElementById('pomoSubjectRangeFeedback');if(rangeFeedback)rangeFeedback.textContent=pomoSubjectPeriod==='custom'&&window.start===null?window.label:'';
  document.getElementById('pomoTotalMinutes').textContent=formatStudyDuration(totalSeconds);
  document.getElementById('pomoTotalSessions').textContent=sessions.length;
  document.getElementById('pomoSubjectCount').textContent=entries.length;
@@ -2936,7 +3184,7 @@ function renderPomodoroStats(){
  const subjectChart=document.getElementById('pomoSubjectChart');
  const pie=document.getElementById('pomoSubjectPie'),pieLegend=document.getElementById('pomoSubjectPieLegend');
  if(!entries.length){
-  subjectChart.innerHTML='<div class="stats-empty">Complete a focus session to see subject statistics.</div>';
+  subjectChart.innerHTML='<div class="stats-empty">'+(pomoSubjectPeriod==='custom'?'No sessions in this date range.':'No focus sessions in this period.')+'</div>';
   if(pie)pie.style.background='conic-gradient(#293149 0deg 360deg)';
   if(pieLegend)pieLegend.innerHTML='<div class="stats-empty">No subject data yet.</div>';
  }else{
@@ -2945,15 +3193,45 @@ function renderPomodoroStats(){
   const palette=['#8c69ed','#66e0cb','#f4b860','#ed729d','#6ea8fe','#b8a0ff','#8bd17c','#f08a5d','#65c3d9','#d68bdc'];
   let angle=0;
   const slices=entries.map(([name,secs],i)=>{
-   const start=angle;angle+=secs/totalSeconds*360;
+   const start=angle;angle+=secs/filteredTotal*360;
    return {name,secs,color:palette[i%palette.length],start,end:angle};
   });
   if(pie)pie.style.background='conic-gradient('+slices.map(x=>x.color+' '+x.start.toFixed(2)+'deg '+x.end.toFixed(2)+'deg').join(',')+')';
-  if(pieLegend)pieLegend.innerHTML=slices.map(x=>'<div class="pomo-pie-legend-row"><span class="pomo-pie-swatch" style="background:'+x.color+'"></span><span class="pomo-pie-legend-name">'+statsEscape(x.name)+'</span><strong>'+Math.round(x.secs/totalSeconds*100)+'%</strong></div>').join('');
+  if(pieLegend)pieLegend.innerHTML=slices.map(x=>'<div class="pomo-pie-legend-row"><span class="pomo-pie-swatch" style="background:'+x.color+'"></span><span class="pomo-pie-legend-name">'+statsEscape(x.name)+'</span><strong>'+Math.round(x.secs/filteredTotal*100)+'%</strong></div>').join('');
  }
  const maxDay=Math.max(1,...days.map(x=>x.seconds));
- document.getElementById('pomoDailyChart').innerHTML=days.map(x=>'<div class="pomo-day-col"><span class="pomo-day-value">'+formatStudyDuration(x.seconds)+'</span><div class="pomo-day-track"><div class="pomo-day-fill" style="height:'+(x.seconds/maxDay*100)+'%"></div></div><span class="pomo-day-label">'+x.label+'</span></div>').join('');
+ renderPomodoro24HourBreakdown();
 }
+
+function renderPomodoro24HourBreakdown(){
+ const track=document.getElementById('pomo24Track');
+ const legend=document.getElementById('pomo24Legend');
+ if(!track||!legend)return;
+ const now=new Date(),start=new Date(now);start.setHours(0,0,0,0);
+ const end=new Date(start);end.setDate(end.getDate()+1);
+ const sessions=(Array.isArray(data.studySessions)?data.studySessions:[]).filter(x=>{
+  const completed=new Date(x.completedAt);
+  return Number.isFinite(completed.getTime())&&completed>=start&&completed<end&&x.source!=='habit-completion';
+ });
+ const secondsOf=x=>Math.max(0,Number(x.seconds)||Number(x.minutes||0)*60);
+ const bySubject={};
+ sessions.forEach(x=>{const subject=String(x.subject||'Unspecified');bySubject[subject]=(bySubject[subject]||0)+secondsOf(x);});
+ const total=Math.min(86400,Object.values(bySubject).reduce((a,b)=>a+b,0));
+ const wasted=Math.max(0,86400-total);
+ const palette=['#8c69ed','#66cdbd','#f0b45e','#e9789f','#6ea8fe','#b49aef','#8acb78','#ed8a68','#62b9d1','#d28bd7'];
+ const entries=Object.entries(bySubject).sort((a,b)=>b[1]-a[1]);
+ let colors={};entries.forEach(([name],i)=>colors[name]=palette[i%palette.length]);
+ const pieces=entries.map(([name,secs])=>({name,seconds:secs,color:colors[name]}));
+ if(wasted>0)pieces.push({name:'Wasted',seconds:wasted,color:'#343e58'});
+ const cappedTotal=pieces.reduce((a,x)=>a+x.seconds,0)||86400;
+ track.innerHTML=pieces.map(x=>'<div class="day24-segment '+(x.name==='Wasted'?'wasted':'')+'" title="'+statsEscape(x.name)+' · '+formatStudyDuration(x.seconds)+'" style="width:'+(x.seconds/cappedTotal*100).toFixed(4)+'%;background:'+x.color+'"></div>').join('');
+ const hours=seconds=>{const h=seconds/3600;return (h<0.05?'0':h.toFixed(h%1===0?0:1))+'h';};
+ document.getElementById('pomo24StudyTotal').textContent=formatStudyDuration(total)+' studied';
+ document.getElementById('pomo24WastedTotal').textContent=hours(wasted)+' wasted';
+ document.getElementById('pomo24DateLabel').textContent=now.toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'});
+ legend.innerHTML=pieces.map(x=>'<span><i class="day24-dot '+(x.name==='Wasted'?'wasted':'')+'" style="background:'+x.color+'"></i>'+statsEscape(x.name)+' · '+hours(x.seconds)+'</span>').join('');
+}
+
 function setPomodoroFullscreenUI(active){
  const btn=document.getElementById('pomodoroFullscreen');
  btn.textContent=active?'⤢':'⛶';
@@ -3183,5 +3461,66 @@ data=createFreshPlayerData();ensureProgress();render();renderPomodoroSubjects();
    width:42px!important;height:42px!important;flex-basis:42px!important;
  }
 }
-</style></body>
+</style>
+<style id="accountability-expansion-style">
+.accountability-overview{margin:0 0 18px;padding:20px;border:1px solid #3e3b69;background:linear-gradient(125deg,rgba(22,25,49,.96),rgba(13,18,35,.96))}
+.accountability-stats-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0}
+.accountability-stats-grid .stat-card{padding:14px;border:1px solid #343653;border-radius:12px;background:rgba(5,9,22,.42);display:grid;gap:6px}
+.accountability-stats-grid small{font-size:11px;color:#a8abc8}.accountability-stats-grid strong{font-size:21px;color:#f3f1ff}
+.accountability-progress{margin:12px 0 18px}.accountability-progress .section-head{display:flex;justify-content:space-between;gap:12px;margin-bottom:8px}
+.accountability-progress .progress-track{height:9px;background:#252945;border-radius:20px;overflow:hidden}.accountability-progress .progress-track span{display:block;height:100%;border-radius:20px;background:linear-gradient(90deg,#6e8cff,#b58cff);transition:width .3s}
+.accountability-breakdown{display:grid;gap:8px}.accountability-breakdown-row,.accountability-list-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid #303450;border-radius:10px;background:rgba(5,9,22,.3)}
+.accountability-breakdown-row span{color:#d8d9f0}.accountability-breakdown-row strong{white-space:nowrap;color:#b9a8ff}
+.accountability-list-row small{display:block;color:#9da2c2;margin-top:3px;font-size:11px}
+.accountability-list-row button{flex-shrink:0;padding:6px 9px;border:1px solid #55517c;border-radius:8px;background:#201c3d;color:#ddd6ff}
+#accountabilityNudgesCard label,#accountabilityProfileCard label{display:block;margin:10px 0 6px;color:#b9bbd3;font-size:12px}
+#accountabilityNudgesCard input,#accountabilityNudgesCard select,#accountabilityProfileCard input[type=number]{width:100%;min-width:0;padding:10px;border:1px solid #393d60;border-radius:9px;background:#0c1124;color:#f1efff}
+.accountability-toggle{display:flex!important;align-items:center;gap:9px}.accountability-toggle input{width:auto!important}
+@media(max-width:650px){.accountability-stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.accountability-overview{padding:15px}.accountability-stats-grid strong{font-size:18px}}
+</style>
+
+
+<style id="friends-study-activity-style">
+.accountability-friends-activity{margin:18px 0;padding:20px;border:1px solid #3e3b69;background:linear-gradient(130deg,rgba(19,23,45,.96),rgba(12,17,32,.96))}
+.accountability-period-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:16px 0}
+.accountability-period-grid .stat-card{padding:14px;border:1px solid #343653;border-radius:12px;background:rgba(5,9,22,.42);display:grid;gap:5px}
+.accountability-period-grid small,.accountability-period-grid span{font-size:11px;color:#a8abc8}.accountability-period-grid strong{font-size:21px;color:#f3f1ff}
+.accountability-friends-activity-list{display:grid;gap:12px}.friend-activity-card{padding:15px;border:1px solid #343653;border-radius:13px;background:rgba(5,9,22,.32)}
+.friend-activity-card h3{font-size:17px;margin:0}.friend-activity-card small{color:#a8abc8;font-size:11px}
+.friend-activity-session-list{display:grid;gap:7px;margin-top:12px}.friend-activity-session{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 10px;border-radius:9px;background:rgba(34,37,64,.55)}
+.friend-activity-session small{display:block;margin-top:3px}.friend-activity-session b{white-space:nowrap;color:#c5b6ff;font-size:13px}
+@media(max-width:650px){.accountability-friends-activity{padding:14px}.accountability-period-grid{gap:7px}.accountability-period-grid .stat-card{padding:10px}.accountability-period-grid strong{font-size:17px}}
+</style>
+
+
+<style id="friend-period-summary-style">
+.friend-period-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+.friend-period-summary>div{padding:9px;border:1px solid #303450;border-radius:9px;background:rgba(27,30,53,.45);display:grid;gap:4px;min-width:0}
+.friend-period-summary small{font-size:10px;color:#a8abc8}.friend-period-summary strong{font-size:11px;color:#e6e2ff;overflow-wrap:anywhere}
+@media(max-width:650px){.friend-period-summary{gap:5px}.friend-period-summary>div{padding:7px}.friend-period-summary strong{font-size:10px}}
+
+/* 24-hour daily time allocation */
+.day24-panel{margin-top:16px;padding:20px 22px}
+.day24-heading{align-items:flex-start}
+.day24-heading h2{margin:8px 0 4px}
+.day24-heading .history-note{margin:0}
+.day24-total-row{display:flex;justify-content:space-between;gap:12px;align-items:center;margin:18px 0 10px;font-size:13px}
+.day24-total-row strong{font-size:16px}
+.day24-total-row span{color:var(--muted,#aab2ca)}
+.day24-track{display:flex;width:100%;height:22px;overflow:hidden;border-radius:8px;background:#252d43;box-shadow:inset 0 0 0 1px rgba(255,255,255,.07)}
+.day24-segment{height:100%;min-width:0;transition:width .25s ease}
+.day24-segment.wasted,.day24-dot.wasted{background:#343e58}
+.day24-legend{display:flex;flex-wrap:wrap;gap:9px 16px;margin-top:14px}
+.day24-legend span{display:inline-flex;align-items:center;gap:7px;color:var(--muted,#aab2ca);font-size:12px}
+.day24-dot{width:9px;height:9px;border-radius:3px;display:inline-block;flex:none}
+.day24-note{margin:14px 0 0;color:var(--muted,#aab2ca);font-size:11px;line-height:1.5}
+@media(max-width:600px){.day24-panel{padding:16px}.day24-total-row{align-items:flex-start;flex-direction:column;gap:4px}}
+
+/* Growth quote between Pomodoro dashboard and study preferences */
+.pomo-growth-quote{display:flex;align-items:center;justify-content:center;gap:10px;min-height:64px;margin:10px 0 14px;padding:12px 18px;text-align:center;color:#d8c9ff;font-size:clamp(15px,2vw,19px);font-weight:750;letter-spacing:.02em;text-shadow:0 2px 18px rgba(140,105,237,.28)}
+.pomo-growth-quote-mark{font-size:27px;line-height:1;color:#9878ee;opacity:.9}
+
+</style>
+
+</body>
 </html>
