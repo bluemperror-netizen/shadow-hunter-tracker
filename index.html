@@ -1486,8 +1486,8 @@ body.pomodoro-fallback-active{overflow:hidden!important}
       <div class="day24-legend" id="pomo24Legend"><span><i class="day24-dot wasted"></i>Wasted · 24h</span></div>
       <p class="day24-note">“Wasted” means no study session was logged for that time. It does not automatically mean the time was wasted.</p>
       <details class="manual-study-entry" id="manualStudyEntry">
-        <summary>Missed recording a study session? <span>Add it here</span></summary>
-        <p class="history-note">Add a past or missed session. It will be included in your study history, statistics, daily breakdown, study goal and friend activity.</p>
+        <summary>Forgot to record a study session? <span>＋ Add missed session</span></summary>
+        <p class="history-note">Add a session you forgot to time. It updates your study history, analytics, daily totals, automatic Study/Learn goal, cloud save and (when signed in) friend activity.</p>
         <form id="manualStudySessionForm" class="manual-study-form">
           <label>Subject
             <select id="manualStudySubject" required><option value="">Choose a subject</option></select>
@@ -1597,6 +1597,31 @@ body.pomodoro-fallback-active{overflow:hidden!important}
     </div>
   </section>
 </main>
+
+<script>
+(function(){
+  function report(message){
+    try{
+      var host=document.getElementById('authStatus');
+      if(host){
+        host.textContent='APP ERROR: '+String(message||'Unknown JavaScript error')+'. Open browser Console (F12) for details.';
+        host.className='auth-state error';
+      }
+      console.error('[Shadow Hunter runtime]',message);
+    }catch(_){}
+  }
+  window.addEventListener('error',function(event){
+    var detail=event.message||'Script failed to load';
+    if(event.filename)detail+=' ('+event.filename.split('/').pop()+':'+(event.lineno||'?')+')';
+    report(detail);
+  });
+  window.addEventListener('unhandledrejection',function(event){
+    var reason=event.reason;
+    report(reason&&reason.message?reason.message:String(reason||'Unhandled promise rejection'));
+  });
+  window.__shadowHunterReportError=report;
+})();
+</script>
 <script>
 const KEY='dailyHabitTracker_v1';
 const todayKey=()=>new Date().toLocaleDateString('en-CA');
@@ -2403,7 +2428,7 @@ async function initCloud(){
  }
  cloudClient=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_PUBLISHABLE_KEY);
  cloudClient.auth.onAuthStateChange((event,session)=>{
-  if(event==='SIGNED_IN'&&session) setTimeout(()=>syncFromCloud(session.user),0);
+  if(event==='SIGNED_IN'&&session) setTimeout(()=>safelySyncFromCloud(session.user),0);
   if(event==='SIGNED_OUT'){
    ++authSyncToken;clearTimeout(cloudWriteTimer);cloudReady=false;cloudUser=null;
    if(cloudChannel){cloudClient.removeChannel(cloudChannel);cloudChannel=null;}
@@ -2420,7 +2445,7 @@ async function initCloud(){
  });
  const {data:sessionData,error:sessionError}=await cloudClient.auth.getSession();
  if(sessionError){setAuthStatus('Could not check login session: '+sessionError.message,'error');return;}
- if(sessionData.session) await syncFromCloud(sessionData.session.user);
+ if(sessionData.session) await safelySyncFromCloud(sessionData.session.user);
  else {
   // Browser localStorage is shared by accounts on this browser. Do not load it
   // while signed out; show a clean anonymous preview instead.
@@ -2429,22 +2454,48 @@ async function initCloud(){
   setAuthStatus('Not logged in · sign in to load your own cloud profile.');
  }
 }
+function withCloudTimeout(promise,milliseconds,label){
+ let timer;
+ return Promise.race([
+  promise,
+  new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(label+' timed out. Check your internet connection and Supabase project status, then try again.')),milliseconds);})
+ ]).finally(()=>clearTimeout(timer));
+}
+function safelySyncFromCloud(user){
+ return withCloudTimeout(syncFromCloud(user),25000,'Cloud profile loading').catch(error=>{
+  console.error('Shadow Hunter cloud sync failed:',error);
+  cloudReady=false;
+  if(user)setSignedInUI(user);
+  setAuthStatus('Login succeeded, but cloud data could not finish loading: '+(error?.message||String(error)),'error');
+  try{render();renderPomodoroSubjects();renderPomodoroHistory();}catch(renderError){console.error('Fallback render failed:',renderError);}
+ });
+}
 document.getElementById('signInBtn').addEventListener('click',async()=>{
  const email=document.getElementById('authEmail').value.trim(),password=document.getElementById('authPassword').value;
+ const button=document.getElementById('signInBtn');
  if(!email||!password){setAuthStatus('Enter your email and password.','error');return;}
- setAuthStatus('Signing in…');
- const {error}=await cloudClient.auth.signInWithPassword({email,password});
- if(error)setAuthStatus(error.message,'error');
+ if(!cloudClient){setAuthStatus('Cloud login is not initialized. Refresh the page and check config.js / internet access.','error');return;}
+ button.disabled=true;setAuthStatus('Signing in…');
+ try{
+  const {error}=await withCloudTimeout(cloudClient.auth.signInWithPassword({email,password}),20000,'Sign-in request');
+  if(error)setAuthStatus(error.message,'error');
+ }catch(error){setAuthStatus(error?.message||'Sign-in failed. Check your internet connection and try again.','error');}
+ finally{button.disabled=false;}
 });
 document.getElementById('signUpBtn').addEventListener('click',async()=>{
  const email=document.getElementById('authEmail').value.trim(),password=document.getElementById('authPassword').value;
+ const button=document.getElementById('signUpBtn');
  if(!email||!password){setAuthStatus('Enter your email and password.','error');return;}
+ if(!cloudClient){setAuthStatus('Cloud login is not initialized. Refresh the page and check config.js / internet access.','error');return;}
  if(password.length<8){setAuthStatus('Use a password with at least 8 characters.','error');return;}
- setAuthStatus('Creating account…');
- const {data:result,error}=await cloudClient.auth.signUp({email,password});
- if(error)setAuthStatus(error.message,'error');
- else if(result.session) await syncFromCloud(result.user);
- else setAuthStatus('Account created. Check your email to confirm, then return here and log in.','ok');
+ button.disabled=true;setAuthStatus('Creating account…');
+ try{
+  const {data:result,error}=await withCloudTimeout(cloudClient.auth.signUp({email,password}),20000,'Account creation');
+  if(error)setAuthStatus(error.message,'error');
+  else if(result.session) await safelySyncFromCloud(result.user);
+  else setAuthStatus('Account created. Check your email to confirm, then return here and log in.','ok');
+ }catch(error){setAuthStatus(error?.message||'Account creation failed. Check your connection and try again.','error');}
+ finally{button.disabled=false;}
 });
 document.getElementById('profileAvatarBtn').addEventListener('click',()=>{
  const tab=document.querySelector('.page-tab[data-page="dashboardPage"]');
@@ -2704,33 +2755,49 @@ function studyFocusSecondsForDay(dayKey=todayKey()){
  },0);
 }
 function getAutoStudyHabit(){
- return data.habits.find(h=>{
-  const name=String(h.name||'').trim().toLowerCase();
-  if(!/^(study|learn)\\b/.test(name))return false;
-  const unit=String(trackerFor(h).unit||'').trim().toLowerCase();
-  return ['min','mins','minute','minutes','h','hr','hrs','hour','hours'].includes(unit);
- })||null;
+ const timeUnits=['min','mins','minute','minutes','h','hr','hrs','hour','hours'];
+ const candidates=data.habits.filter(h=>{
+  const name=String(h.name||'').trim();
+  if(!/\b(study|learn)\b/i.test(name))return false;
+  const tracker=trackerFor(h),unit=String(tracker.unit||'').trim().toLowerCase();
+  return timeUnits.includes(unit);
+ });
+ // Prefer the dedicated Study/Learn habit if there is more than one time-based habit.
+ const habit=candidates.find(h=>/^\s*(study|learn)\b/i.test(String(h.name||'')))||candidates[0]||null;
+ if(!habit)return null;
+ // If the title explicitly states a duration (e.g. "Study or learn for 5 hours"),
+ // keep the hidden timer target consistent with that stated duration.
+ const match=String(habit.name||'').match(/\b(\d+(?:\.\d+)?)\s*(minutes?|mins?|hours?|hrs?|h|m)\b/i);
+ if(match){
+  const value=Number(match[1]),unit=match[2].toLowerCase();
+  if(Number.isFinite(value)&&value>0){
+   habit.tracker.target=value;
+   habit.tracker.unit=/^(h|hr|hrs|hour|hours)$/.test(unit)?'hours':'min';
+  }
+ }
+ return habit;
 }
-function syncDailyStudyHabitGoal(){
+function syncDailyStudyHabitGoal(day=todayKey()){
  const habit=getAutoStudyHabit();
  if(!habit)return false;
  const tracker=trackerFor(habit),unit=String(tracker.unit||'').trim().toLowerCase();
  const amount=Math.max(0,Number(tracker.target)||1);
  const goalSeconds=amount*(['h','hr','hrs','hour','hours'].includes(unit)?3600:60);
- const day=todayKey(),focused=studyFocusSecondsForDay(day);
+ const focused=studyFocusSecondsForDay(day);
  data.days=data.days||{};
  const done=Array.isArray(data.days[day])?data.days[day]:[];
  data.studyGoalAutoCompleted=data.studyGoalAutoCompleted||{};
  if(focused>=goalSeconds){
   if(!done.includes(habit.id))data.days[day]=[...done,habit.id];
-  if(!data.studyGoalAutoCompleted[day]){
+  if(day===todayKey()&&!data.studyGoalAutoCompleted[day]){
    data.studyGoalAutoCompleted[day]=true;
    evaluateCompletionRewards(day);
   }
   return !done.includes(habit.id);
  }
- if(done.includes(habit.id)){
+ if(done.includes(habit.id)&&data.studyGoalAutoCompleted[day]){
   data.days[day]=done.filter(id=>id!==habit.id);
+  if(day===todayKey())delete data.studyGoalAutoCompleted[day];
   return true;
  }
  return false;
@@ -3287,14 +3354,34 @@ document.getElementById('pomodoroReset').addEventListener('click',()=>setPomodor
 function populateManualStudySubjects(){
  const select=document.getElementById('manualStudySubject');if(!select)return;
  const current=select.value;
- const subjects=[...new Set([...(Array.isArray(data.studySubjects)?data.studySubjects:[]),...(document.getElementById('pomodoroSubject')?[...document.getElementById('pomodoroSubject').options].map(o=>o.value).filter(Boolean):[])])];
+ const subjects=[...new Set([...(data&&Array.isArray(data.studySubjects)?data.studySubjects:[]),...(document.getElementById('pomodoroSubject')?[...document.getElementById('pomodoroSubject').options].map(o=>o.value).filter(Boolean):[])])];
  select.innerHTML='<option value="">Choose a subject</option>'+subjects.map(s=>'<option value="'+escapeHtml(s)+'">'+escapeHtml(s)+'</option>').join('');
  if(subjects.includes(current))select.value=current;
+}
+async function flushManualStudyCloud(){
+ if(!cloudClient||!cloudUser||!cloudReady)return {synced:false,reason:'You are offline or not signed in; the session is saved on this device.'};
+ clearTimeout(cloudWriteTimer);
+ const targetUserId=cloudUser.id;
+ const snapshot=JSON.parse(JSON.stringify(data));
+ const {error}=await cloudClient.from('player_saves').upsert(
+  {user_id:targetUserId,player_data:snapshot,updated_at:new Date().toISOString()},
+  {onConflict:'user_id'}
+ );
+ if(error)throw error;
+ if(!cloudUser||cloudUser.id!==targetUserId)throw new Error('Account changed before cloud save completed.');
+ return {synced:true};
 }
 function bindManualStudyEntry(){
  const form=document.getElementById('manualStudySessionForm');if(!form||form.dataset.bound)return;
  form.dataset.bound='1';
- const date=document.getElementById('manualStudyDate');if(date&&!date.value){const now=new Date();date.value=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');}
+ const date=document.getElementById('manualStudyDate');
+ const setDateLimits=()=>{
+  if(!date)return;
+  const now=new Date(),today=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+  date.max=today;
+  if(!date.value)date.value=today;
+ };
+ setDateLimits();
  populateManualStudySubjects();
  form.addEventListener('submit',async e=>{
   e.preventDefault();
@@ -3304,36 +3391,66 @@ function bindManualStudyEntry(){
   const hours=Number(document.getElementById('manualStudyHours').value)||0;
   const minutes=Number(document.getElementById('manualStudyMinutes').value)||0;
   const feedback=document.getElementById('manualStudyFeedback');
+  const submit=form.querySelector('[type="submit"]');
   const seconds=(hours*60+minutes)*60;
-  if(!subject||!dateValue||!timeValue||seconds<=0||minutes>59||hours>23){feedback.textContent='Choose a subject, date and valid duration greater than zero.';feedback.dataset.type='error';return;}
+  const say=(message,type)=>{feedback.textContent=message;feedback.dataset.type=type;};
+  if(!subject||!dateValue||!timeValue||seconds<=0||hours<0||hours>23||minutes<0||minutes>59){say('Choose a subject, a valid date and time, and a duration greater than zero.','error');return;}
   const completedAt=new Date(dateValue+'T'+timeValue+':00');
-  if(!Number.isFinite(completedAt.getTime())){feedback.textContent='The date or completion time is invalid.';feedback.dataset.type='error';return;}
+  if(!Number.isFinite(completedAt.getTime())){say('The date or completion time is invalid.','error');return;}
+  if(completedAt>Date.now()){say('The completion time cannot be in the future.','error');return;}
   const dayStart=new Date(dateValue+'T00:00:00'),dayEnd=new Date(dayStart);dayEnd.setDate(dayEnd.getDate()+1);
-  const existing=(Array.isArray(data.studySessions)?data.studySessions:[]).filter(s=>s&&s.completedAt&&s.source!=='habit-completion').reduce((sum,s)=>{
-   const d=new Date(s.completedAt);return Number.isFinite(d.getTime())&&d>=dayStart&&d<dayEnd?sum+Math.max(0,Number(s.seconds)||Number(s.minutes||0)*60):sum;
-  },0);
-  if(existing+seconds>86400){feedback.textContent='This would record more than 24 study hours for that date. Check the duration or existing entries.';feedback.dataset.type='error';return;}
+  const existing=(Array.isArray(data.studySessions)?data.studySessions:[]).filter(s=>{
+   if(!s||!s.completedAt||s.source==='habit-completion')return false;
+   const d=new Date(s.completedAt);
+   return Number.isFinite(d.getTime())&&d>=dayStart&&d<dayEnd;
+  }).reduce((sum,s)=>sum+Math.max(0,Number(s.seconds)||Number(s.minutes||0)*60),0);
+  if(existing+seconds>86400){say('This would record more than 24 study hours for that date. Check the duration or existing entries.','error');return;}
+  if(submit)submit.disabled=true;
+  say('Saving session…','');
   const id='manual:'+newId();
   const session={id,subject,completedAt:completedAt.toISOString(),startedAt:new Date(completedAt.getTime()-seconds*1000).toISOString(),minutes:Math.round(seconds/60*10)/10,seconds,source:'manual'};
-  data.studySessions=Array.isArray(data.studySessions)?data.studySessions:[];
-  data.studySessions.push(session);
-  syncPomodoroToStudyHabit(subject,seconds,session.completedAt,id);
-  syncDailyStudyHabitGoal();
-  save();
-  void publishFriendStudySession(session);
-  render();
-  renderPomodoroHistory();
-  renderPomodoroStats();
-  renderPomodoro24HourBreakdown();
-  feedback.textContent='Session saved. Your study history, statistics and daily totals have been updated.';
-  feedback.dataset.type='ok';
-  document.getElementById('manualStudyHours').value='0';
-  document.getElementById('manualStudyMinutes').value='30';
-  populateManualStudySubjects();
+  try{
+   data.studySessions=Array.isArray(data.studySessions)?data.studySessions:[];
+   data.studySessions.push(session);
+   const dayKey=dateValue;
+   syncPomodoroToStudyHabit(subject,seconds,session.completedAt,id);
+   syncDailyStudyHabitGoal(dayKey);
+   save();
+   render();
+   renderPomodoroHistory();
+   renderPomodoroStats();
+   renderPomodoro24HourBreakdown();
+   // Ensure the complete player_data snapshot and friend activity are sent immediately.
+   let cloudMessage='Saved on this device.';
+   try{
+    const cloudResult=await flushManualStudyCloud();
+    await publishFriendStudySession(session);
+    cloudMessage=cloudResult.synced?'Synced to your account and friend activity.':cloudResult.reason;
+   }catch(cloudError){
+    console.error('Manual study cloud sync failed:',cloudError);
+    cloudMessage='Saved locally, but cloud sync failed: '+(cloudError.message||String(cloudError));
+   }
+   say('Session saved. Study history, statistics, the 24-hour breakdown and the Study/Learn goal have been updated. '+cloudMessage,cloudMessage.startsWith('Synced')?'ok':'');
+   document.getElementById('manualStudyHours').value='0';
+   document.getElementById('manualStudyMinutes').value='30';
+   populateManualStudySubjects();
+  }catch(error){
+   console.error('Manual study entry failed:',error);
+   say('Could not save the session: '+(error.message||String(error)),'error');
+  }finally{
+   if(submit)submit.disabled=false;
+  }
  });
 }
+
 bindManualStudyEntry();
-document.getElementById('manualStudyEntry')?.addEventListener('toggle',()=>{if(document.getElementById('manualStudyEntry')?.open)populateManualStudySubjects();});
+document.getElementById('manualStudyEntry')?.addEventListener('toggle',()=>{
+ if(document.getElementById('manualStudyEntry')?.open){
+  populateManualStudySubjects();
+  const date=document.getElementById('manualStudyDate');
+  if(date&&!date.value){const now=new Date();date.value=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');}
+ }
+});
 
 
 
@@ -3540,7 +3657,14 @@ document.querySelectorAll('.range-btn').forEach(b=>b.addEventListener('click',()
 
 // Start with an anonymous preview. Authenticated cloud data is loaded only
 // after Supabase confirms the signed-in user; never hydrate from shared localStorage.
-data=createFreshPlayerData();ensureProgress();render();renderPomodoroSubjects();bindPomodoroStudyDayNavigation();renderPomodoroHistory();setPomodoroMode('focus');setSignedInUI(null);initCloud();
+try{
+ data=createFreshPlayerData();ensureProgress();render();renderPomodoroSubjects();bindPomodoroStudyDayNavigation();renderPomodoroHistory();setPomodoroMode('focus');setSignedInUI(null);
+ initCloud().catch(error=>{console.error('Shadow Hunter initialization failed:',error);setAuthStatus('App initialization failed: '+(error?.message||String(error)),'error');});
+}catch(startupError){
+ console.error('Shadow Hunter startup failed:',startupError);
+ setAuthStatus('App startup failed: '+(startupError?.message||String(startupError)),'error');
+ window.__shadowHunterReportError?.(startupError?.stack||startupError);
+}
 </script>
 <style id="mobile-final-pass">
 /* Final mobile layout pass: navigation readability and overflow prevention */
